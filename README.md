@@ -24,21 +24,25 @@
 ### 2. コミットメッセージ
 - プレフィックスを付ける（例: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`）
 
-## セットアップ手順
+## セットアップと開発手順
 
 詳細なコマンド一覧は [docs/commands.md](./docs/commands.md) を参照してください。
 
-### 1. データベースの起動
+### 1. 依存関係のインストール (初回のみ)
 ```bash
-docker compose up -d db
+pnpm setup
 ```
 
-### 2. バックエンドの起動
+### 2. データベースの起動
 ```bash
-go run backend/cmd/server/main.go
+pnpm db
 ```
 
-### 3. フロントエンドの起動
+### 3. アプリケーションの起動 (それぞれ別ターミナル)
+- **バックエンド**: `pnpm dev:back`
+- **フロントエンド**: `pnpm dev:front`
+
+### 4. コミット前の品質チェック
 ```bash
-pnpm --filter frontend dev
+pnpm check
 ```
