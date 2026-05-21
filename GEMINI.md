@@ -40,6 +40,7 @@
 
 ## AI Acknowledgement
 This project is developed with the active collaboration of AI agents.
-- **Gemini CLI**: Acting as a primary developer and architect.
-- **GitHub Copilot CLI**: Providing development support and suggestions.
+- **Gemini-CLI[bot]** (`gemini-cli[bot]@users.noreply.github.com`): Acting as a primary developer and architect.
+- **GitHub-Copilot[bot]** (`github-copilot[bot]@users.noreply.github.com`): Providing development support and suggestions.
+- **AI-Driven Development**: All code is reviewed and refined by AI agents.
 - **AI-Driven Development**: All code is reviewed and refined by AI agents.
