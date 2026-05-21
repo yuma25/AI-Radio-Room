@@ -15,3 +15,24 @@
 - **Environment Variables**: Use `.env` for secrets (API keys, DB passwords). Never commit `.env`.
 - **Database**: Use Docker for PostgreSQL (`docker compose up -d db`). Run App logic natively for performance.
 - **AI API**: Use Google Gemini API via official Go SDK. Read API keys from env vars.
+- **Documentation**: すべてのコード要素（パッケージ、構造体、関数など）に、JavaDoc形式に近い詳細な日本語コメントを必須とする。
+  - **記述形式**:
+    ```go
+    /**
+     * [概要]
+     * @param 引数名 [型] 説明
+     * @return 戻り値名 [型] 説明
+     */
+    ```
+  - **文体**: 日本語コメントの語尾は「である」調（常体）に統一する。
+  - **記載内容**:
+    - 処理の詳細なステップ。
+    - すべての `()` を含む関数・メソッド呼び出しに対し、所属パッケージ、引数、戻り値、役割を明記する。
+    - 引数や戻り値が「なし」の場合も、その旨を明記する。
+
+## Commit Standards
+- **AIによるコミット時の必須確認事項**:
+  - すべての `()` に対するコメント記載が漏れなく完了していること。
+  - `scripts/pre-commit-check.sh` がパスしていること。
+- **Git Hooks**:
+  - `pre-commit` フックにより、人間・AIを問わず、ビルド・静的解析・フォーマットが成功しない限りコミットは拒否される。
