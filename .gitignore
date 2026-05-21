@@ -1,0 +1,17 @@
+# General
+.env
+*.log
+
+# Backend
+backend/bin/
+backend/archives/*.md
+!backend/archives/.gitkeep
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.pnpm-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
