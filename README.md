@@ -10,18 +10,18 @@
 - `/backend`: Go (Standard Library) - 番組進行・Gemini API連携
 - `/docs`: 設計ドキュメント・仕様書
 
-## チーム開発のための共通ルール
+## チーム開発のルール
 
-### 1. パッケージ管理
-- フロントエンドは必ず **pnpm** を使用してください。
+詳細な規約は [GEMINI.md](./GEMINI.md) を参照してください。
 
-### 2. ブランチ戦略
-- `main`: プロダクション用（安定版）
-- `develop`: 開発用ブランチ
-- `feature/*`: 機能追加
-- `fix/*`: バグ修正
+### 1. 開発フロー
+新たな機能開発やバグ修正を行う際は、以下の手順を遵守してください。
+1. **GitHub Issue を作成**: テンプレートを使用して、作業内容と編集対象ファイルを明確にする。
+2. **ブランチの作成**: `feat/issue-[番号]-概要` の形式でブランチを作成する。
+3. **実装とチェック**: `pre-commit` フックにより自動的に品質チェックが行われる。
+4. **プルリクエストの作成**: テンプレートに従い、詳細なコメントと共にレビューを依頼する。
 
-### 3. コミットメッセージ
+### 2. コミットメッセージ
 - プレフィックスを付ける（例: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`）
 
 ## セットアップ手順
@@ -35,12 +35,10 @@ docker compose up -d db
 
 ### 2. バックエンドの起動
 ```bash
-cd backend
-go run cmd/server/main.go
+go run backend/cmd/server/main.go
 ```
 
 ### 3. フロントエンドの起動
 ```bash
-cd frontend
-pnpm dev
+pnpm --filter frontend dev
 ```

@@ -35,4 +35,9 @@
   - すべての `()` に対するコメント記載が漏れなく完了していること。
   - `scripts/pre-commit-check.sh` がパスしていること。
 - **Git Hooks**:
-  - `pre-commit` フックにより、人間・AIを問わず、ビルド・静的解析・フォーマットが成功しない限りコミットは拒否される。
+  - `pre-commit`: ブランチ名規約 `(feat|fix|...)/issue-[番号]-概要` を検証し、ビルドを強制する。
+  - `commit-msg`: プレフィックス `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `chore:` を必須化する。
+
+## Development Workflow
+- **Issue First**: 新たな作業を開始する際は、必ず GitHub Issue を作成し、そこで作業範囲と編集許可ファイルを確定させる。
+- **Branch Strategy**: Issue作成後、指定された命名規則に基づきブランチを作成して作業を開始する。

@@ -38,19 +38,17 @@ cp .env.example .env
 
 | アクション | コマンド |
 | :--- | :--- |
-| **疎通テスト実行** | `go run cmd/server/main.go` |
-| **依存関係の整理** | `go mod tidy` |
-| **テストの実行** | `go test ./...` |
+| **疎通テスト実行** | `go run backend/cmd/server/main.go` |
+| **依存関係の整理** | `cd backend && go mod tidy && cd ..` |
+| **テストの実行** | `go test ./backend/...` |
 
 ## 4. フロントエンド開発 (Frontend / TypeScript)
 
-`frontend` ディレクトリ内で実行します。
-
 | アクション | コマンド |
 | :--- | :--- |
-| **開発サーバー起動** | `pnpm dev` |
-| **ビルド (本番用)** | `pnpm build` |
-| **型チェック** | `pnpm exec tsc` |
+| **開発サーバー起動** | `pnpm --filter frontend dev` |
+| **ビルド (本番用)** | `pnpm --filter frontend build` |
+| **型チェック** | `pnpm --filter frontend exec tsc` |
 
 ## 5. コミット前の品質チェック (Pre-commit Checks)
 

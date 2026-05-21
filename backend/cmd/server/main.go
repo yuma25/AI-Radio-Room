@@ -50,7 +50,7 @@ func main() {
 /**
  * .env ファイルの読み込みメソッドである。
  * プロジェクトのルートディレクトリに存在する .env ファイルをプロセスにロードする。
- * 
+ *
  * 内部処理:
  * - 1. `godotenv.Load(filenames ...string) error` を使用する。
  *   - `godotenv` パッケージの関数であり、指定されたファイルを読み込み、`os.Setenv` を介して環境変数に展開する。
@@ -70,7 +70,7 @@ func loadEnv() {
 /**
  * Gemini API キーの検証メソッドである。
  * OS環境変数に API キーが正しく設定されているかを確認する。
- * 
+ *
  * 内部処理:
  * - 1. `os.Getenv(key string) string` を使用する。
  *   - `os` パッケージの関数であり、OSの環境変数から指定したキーの値を取得する。値が存在しない場合は空文字列を返す。
@@ -95,7 +95,7 @@ func checkGeminiAPIKey() error {
 /**
  * データベース接続確認メソッドである。
  * 環境変数 DATABASE_URL を使用して PostgreSQL への疎通テストを行う。
- * 
+ *
  * 内部処理:
  * - 1. `os.Getenv(key string) string` を使用し、接続文字列を取得する。
  * - 2. `context.Background() Context` を使用する。
