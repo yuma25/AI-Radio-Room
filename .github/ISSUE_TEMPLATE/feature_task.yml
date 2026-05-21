@@ -1,0 +1,52 @@
+name: "機能開発 / タスク (Feature/Task)"
+description: "新しい機能の追加や改善に関するIssue"
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📌 概要
+        このタスクの目的と、期待される最終成果を簡潔に記述してください。
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "背景・詳細"
+      placeholder: "なぜこの機能が必要なのか、どのような挙動を目指すのかを記述してください。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: "✅ 実装要件 (AI指示用プロンプト)"
+      value: |
+        [Task]
+        xxxを実装してください。
+
+        [Requirements]
+        1. xxxを作成し、xxxを記述する。
+        2. xxxを実装する。
+
+        [Constraints]
+        - xxxは絶対に修正しないこと。
+        - 鉄則に基づいた詳細な日本語ドキュメントを記述すること。
+    validations:
+      required: true
+
+  - type: input
+    id: branch
+    attributes:
+      label: "🚀 指定ブランチ名"
+      placeholder: "feat/issue-X-xxx"
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: "📂 編集許可ファイル"
+      placeholder: "- backend/internal/xxx.go\n- frontend/src/xxx.ts"
+    validations:
+      required: true

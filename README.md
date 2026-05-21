@@ -10,37 +10,45 @@
 - `/backend`: Go (Standard Library) - 番組進行・Gemini API連携
 - `/docs`: 設計ドキュメント・仕様書
 
-## チーム開発のための共通ルール
+## チーム開発のルール
 
-### 1. パッケージ管理
-- フロントエンドは必ず **pnpm** を使用してください。
+詳細な規約は [GEMINI.md](./GEMINI.md) を参照してください。
 
-### 2. ブランチ戦略
-- `main`: プロダクション用（安定版）
-- `develop`: 開発用ブランチ
-- `feature/*`: 機能追加
-- `fix/*`: バグ修正
+### 1. 開発フロー
+新たな機能開発やバグ修正を行う際は、以下の手順を遵守してください。
+1. **GitHub Issue を作成**: テンプレートを使用して、作業内容と編集対象ファイルを明確にする。
+2. **ブランチの作成**: `feat/issue-[番号]-概要` の形式でブランチを作成する。
+3. **実装とチェック**: `pre-commit` フックにより自動的に品質チェックが行われる。
+4. **プルリクエストの作成**: テンプレートに従い、詳細なコメントと共にレビューを依頼する。
 
-### 3. コミットメッセージ
+### 2. コミットメッセージ
 - プレフィックスを付ける（例: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`）
 
-## セットアップ手順
+## セットアップと開発手順
 
 詳細なコマンド一覧は [docs/commands.md](./docs/commands.md) を参照してください。
 
-### 1. データベースの起動
+### 1. 依存関係のインストール (初回のみ)
 ```bash
-docker compose up -d db
+pnpm setup
 ```
 
-### 2. バックエンドの起動
+### 2. データベースの起動
 ```bash
-cd backend
-go run cmd/server/main.go
+pnpm db
 ```
 
-### 3. フロントエンドの起動
+### 3. アプリケーションの起動 (それぞれ別ターミナル)
+- **バックエンド**: `pnpm dev:back`
+- **フロントエンド**: `pnpm dev:front`
+
+### 4. コミット前の品質チェック
 ```bash
-cd frontend
-pnpm dev
+pnpm check
 ```
+
+## 共同開発者 (Contributors)
+
+| [<img src="https://github.com/google-gemini.png" width="100px;"/><br /><sub><b>Gemini CLI</b></sub>](https://github.com/google-gemini/gemini-cli) | [<img src="https://github.com/github.png" width="100px;"/><br /><sub><b>GitHub Copilot</b></sub>](https://github.com/features/copilot) | [<img src="https://github.com/yuma25.png" width="100px;"/><br /><sub><b>yuma25</b></sub>](https://github.com/yuma25) |
+| :---: | :---: | :---: |
+| 開発アシスタント & メンター | 開発支援 | プロジェクトオーナー |
