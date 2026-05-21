@@ -95,7 +95,6 @@ func (g *GeminiClient) GenerateRadioScript(ctx context.Context, theme string) ([
 	}
 
 	// 生成されたコンテンツを抽出する。
-	// resp.Candidates[0].Content.Parts[0] の中身を取得し、文字列にキャストする。
 	var responseText string
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if text, ok := part.(genai.Text); ok {
@@ -103,11 +102,24 @@ func (g *GeminiClient) GenerateRadioScript(ctx context.Context, theme string) ([
 		}
 	}
 
+	// AI が Markdown のコードブロック（```json ... ```）で返してくる場合があるため、
+	// 不要な囲み文字を除去する。
+	// strings パッケージを使用してトリミングを行う。
+	cleanJSON := responseText
+	if len(cleanJSON) > 7 && cleanJSON[:7] == "```json" {
+		// 冒頭の ```json を削除
+		cleanJSON = cleanJSON[7:]
+	}
+	if len(cleanJSON) > 3 && cleanJSON[len(cleanJSON)-3:] == "```" {
+		// 末尾の ``` を削除
+		cleanJSON = cleanJSON[:len(cleanJSON)-3]
+	}
+
 	// JSON のパース。
 	var script []ScriptItem
-	// strings.NewReader(s string) *Reader を使用して文字列をバイトストリームとして扱う。
-	if err := json.Unmarshal([]byte(responseText), &script); err != nil {
-		return nil, fmt.Errorf("JSON のパースに失敗した: %w\nResponse: %s", err, responseText)
+	// json.Unmarshal() を使用して、クリーンアップされた JSON 文字列を構造体に変換する。
+	if err := json.Unmarshal([]byte(cleanJSON), &script); err != nil {
+		return nil, fmt.Errorf("JSON のパースに失敗した: %w\nRaw Response: %s", err, responseText)
 	}
 
 	return script, nil
