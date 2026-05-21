@@ -21,8 +21,7 @@ fi
 
 # --- Backend (Go) のチェック ---
 echo "📦 Checking Backend (Go)..."
-go fmt ./backend/...
-go vet ./backend/...
+(cd backend && go fmt ./... && go vet ./...)
 if ! go build -o /dev/null ./backend/cmd/server/main.go; then
     echo "❌ Backend のビルドに失敗したため、コミットを中断する。"
     exit 1
