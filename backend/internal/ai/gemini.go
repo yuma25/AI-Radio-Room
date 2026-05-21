@@ -77,8 +77,8 @@ func (g *GeminiClient) GenerateRadioScript(ctx context.Context, theme string) ([
 	// gemini-1.5-flash モデルを使用する。
 	model := g.client.GenerativeModel("gemini-1.5-flash")
 
-	// JSON 出力を強制するための設定。
-	model.ResponseMIMEType = "application/json"
+	// JSON 出力を強制するための設定（ライブラリのバージョン互換性のため一時的に無効化）。
+	// model.ResponseMIMEType = "application/json"
 
 	// プロンプトの構築。
 	promptText := fmt.Sprintf("%s\n\nテーマ: %s", SystemPrompt, theme)

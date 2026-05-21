@@ -7,23 +7,27 @@
 echo "🔍 コミット前の品質チェックを開始する..."
 
 # --- ブランチ名チェック ---
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-BRANCH_PATTERN="^(feat|fix|docs|style|refactor|chore|test|revert)/issue-[0-9]+-.+$"
+if [[ "$GITHUB_ACTIONS" == "true" ]]; then
+    echo "ℹ️ CI環境を検出したため、ブランチ名のチェックをスキップする。"
+else
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    BRANCH_PATTERN="^(feat|fix|docs|style|refactor|chore|test|revert)/issue-[0-9]+-.+$"
 
-if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "develop" ]]; then
-    echo "⚠️  注意: $CURRENT_BRANCH ブランチへの直接コミットを許可しているが、極力 feature ブランチを使用すること。"
-elif [[ ! $CURRENT_BRANCH =~ $BRANCH_PATTERN ]]; then
-    echo "❌ エラー: ブランチ名 '$CURRENT_BRANCH' が規約に違反している。"
-    echo "規約: (prefix)/issue-[番号]-概要"
-    echo "例: feat/issue-1-db-schema"
-    exit 1
+    if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "develop" ]]; then
+        echo "⚠️  注意: $CURRENT_BRANCH ブランチへの直接コミットを許可しているが、極力 feature ブランチを使用すること。"
+    elif [[ ! $CURRENT_BRANCH =~ $BRANCH_PATTERN ]]; then
+        echo "❌ エラー: ブランチ名 '$CURRENT_BRANCH' が規約に違反している。"
+        echo "規約: (prefix)/issue-[番号]-概要"
+        echo "例: feat/issue-1-db-schema"
+        exit 1
+    fi
 fi
 
 # --- Backend (Go) のチェック ---
 echo "📦 Checking Backend (Go)..."
-(cd backend && go fmt ./... && go vet ./...)
-if ! go build -o /dev/null ./backend/cmd/server/main.go; then
-    echo "❌ Backend のビルドに失敗したため、コミットを中断する。"
+(cd backend && go fmt ./... && go vet ./... && go build -o /dev/null ./cmd/server/main.go)
+if [ $? -ne 0 ]; then
+    echo "❌ Backend の品質チェックまたはビルドに失敗したため、コミットを中断する。"
     exit 1
 fi
 
