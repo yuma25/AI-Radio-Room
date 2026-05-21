@@ -32,7 +32,10 @@ fi
 if [ -d "frontend/node_modules" ]; then
     echo "📦 Checking Frontend (TS)..."
     pnpm --filter frontend run format
-    pnpm --filter frontend run lint
+    if ! pnpm --filter frontend run lint; then
+        echo "❌ Frontend の Lint（静的解析）に失敗したため、コミットを中断する。"
+        exit 1
+    fi
     if ! pnpm --filter frontend run build; then
         echo "❌ Frontend のビルドに失敗したため、コミットを中断する。"
         exit 1
