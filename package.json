@@ -9,6 +9,7 @@
     "dev:back": "go run backend/cmd/server/main.go",
     "dev:front": "pnpm --filter frontend dev",
     "check": "bash ./scripts/pre-commit-check.sh",
-    "setup": "pnpm install && cd backend && go mod tidy"
+    "setup": "pnpm install && cd backend && go mod tidy",
+    "pr": "gh pr create --body-file .github/PULL_REQUEST_TEMPLATE.md"
   }
 }
