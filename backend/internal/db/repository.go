@@ -14,7 +14,7 @@ type Repository struct {
 }
 
 // NewRepository は新しい Repository インスタンスを作成して返します。
-// 
+//
 // 引数:
 // - conn: 確立済みの pgx データベース接続
 // 戻り値:
@@ -24,7 +24,7 @@ func NewRepository(conn *pgx.Conn) *Repository {
 }
 
 // CreateBroadcast は新しい放送セッションをデータベースに登録します。
-// 
+//
 // 引数:
 // - ctx: コンテキスト（タイムアウトやキャンセル管理用）
 // - title: 放送のテーマ名
@@ -42,7 +42,7 @@ func (r *Repository) CreateBroadcast(ctx context.Context, title string) (uuid.UU
 }
 
 // EndBroadcast は放送セッションの終了時刻を現在時刻で更新します。
-// 
+//
 // 引数:
 // - ctx: コンテキスト
 // - id: 終了させる放送セッションのID
@@ -59,7 +59,7 @@ func (r *Repository) EndBroadcast(ctx context.Context, id uuid.UUID) error {
 
 // SaveTranscript はAIキャラクターの発言ログをデータベースに保存します。
 // 成功時、引数で渡された Transcript 構造体の ID と CreatedAt フィールドがDBの値で更新されます。
-// 
+//
 // 引数:
 // - ctx: コンテキスト
 // - t: 保存する発言データ（ポインタ）
@@ -80,7 +80,7 @@ func (r *Repository) SaveTranscript(ctx context.Context, t *Transcript) error {
 
 // GetTranscriptsByBroadcastID は特定の放送セッションに紐づくすべての発言ログを取得します。
 // 結果は発言日時（created_at）の昇順でソートされます。
-// 
+//
 // 引数:
 // - ctx: コンテキスト
 // - broadcastID: 取得対象の放送セッションID

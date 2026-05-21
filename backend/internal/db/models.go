@@ -8,7 +8,7 @@ import (
 
 // Broadcast は放送セッションの情報を保持する構造体です。
 // DBの broadcasts テーブルに対応しています。
-// 
+//
 // フィールド:
 // - ID: 放送を一意に識別するUUID
 // - Title: 放送のテーマやタイトル
@@ -23,7 +23,7 @@ type Broadcast struct {
 
 // Transcript は放送内の個別の発言ログを保持する構造体です。
 // DBの transcripts テーブルに対応しています。
-// 
+//
 // フィールド:
 // - ID: 発言を一意に識別するUUID
 // - BroadcastID: 紐づく放送セッションのID

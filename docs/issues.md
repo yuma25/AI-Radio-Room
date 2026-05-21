@@ -5,6 +5,7 @@
 ---
 
 ## Issue #1: 【Backend】DBスキーマの作成とデータアクセス層の実装
+**ブランチ名**: `feat/issue-1-db-schema`
 **担当領域**: データベースとGoの接続部分
 **編集許可ファイル**:
 - `backend/migrations/001_init.sql`
@@ -30,6 +31,7 @@ docs/design.md に定義されている `broadcasts` と `transcripts` の2つ�
 ---
 
 ## Issue #2: 【Backend】Gemini APIによる台本自動生成ロジックの実装
+**ブランチ名**: `feat/issue-2-gemini-ai`
 **担当領域**: AIへのプロンプト送信とJSONパース
 **編集許可ファイル**:
 - `backend/internal/ai/gemini.go`
@@ -50,6 +52,7 @@ Google Generative AI (Gemini API) を使用して、3人のキャラクターに
 ---
 
 ## Issue #3: 【Frontend】VOICEVOX 音声合成エンジンのクライアント実装
+**ブランチ名**: `feat/issue-3-voicevox`
 **担当領域**: フロントエンドからVOICEVOX APIを叩き、音声を鳴らす部分
 **編集許可ファイル**:
 - `frontend/src/voice.ts`
@@ -69,6 +72,7 @@ Google Generative AI (Gemini API) を使用して、3人のキャラクターに
 ---
 
 ## Issue #4: 【Backend】Markdown アーカイブ生成機能の実装
+**ブランチ名**: `feat/issue-4-archive`
 **担当領域**: 放送終了後に、テキストファイル（.md）を出力する部分
 **編集許可ファイル**:
 - `backend/internal/archive/markdown.go`
@@ -84,6 +88,7 @@ Google Generative AI (Gemini API) を使用して、3人のキャラクターに
 ---
 
 ## Issue #5: 【Frontend】UI制御とSSEキューイングの統合
+**ブランチ名**: `feat/issue-5-ui-sse`
 **担当領域**: UI描画、SSE受信、音声再生の同期
 **編集許可ファイル**:
 - `frontend/src/ui.ts`
