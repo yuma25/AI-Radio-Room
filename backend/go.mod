@@ -3,11 +3,11 @@ module backend
 go 1.25.0
 
 require (
-	github.com/google/generative-ai-go v0.20.1
+	github.com/google/generative-ai-go v0.11.0
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.5.0
 	github.com/joho/godotenv v1.5.1
-	google.golang.org/api v0.280.0
+	google.golang.org/api v0.274.0
 )
 
 require (
