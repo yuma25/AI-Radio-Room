@@ -1,0 +1,14 @@
+{
+  "name": "ai-radio-room-root",
+  "private": true,
+  "description": "AI Radio Room Project Root",
+  "scripts": {
+    "db": "docker compose up -d db",
+    "db:stop": "docker compose stop db",
+    "db:down": "docker compose down -v",
+    "dev:back": "go run backend/cmd/server/main.go",
+    "dev:front": "pnpm --filter frontend dev",
+    "check": "bash ./scripts/pre-commit-check.sh",
+    "setup": "pnpm install && cd backend && go mod tidy"
+  }
+}
