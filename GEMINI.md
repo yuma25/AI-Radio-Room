@@ -38,6 +38,7 @@
   - `pre-commit`: ブランチ名規約 `(feat|fix|...)/issue-[番号]-概要` を検証し、ビルドを強制する。
   - `commit-msg`: プレフィックス `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `chore:` を必須化する。
 
-## Development Workflow
-- **Issue First**: 新たな作業を開始する際は、必ず GitHub Issue を作成し、そこで作業範囲と編集許可ファイルを確定させる。
-- **Branch Strategy**: Issue作成後、指定された命名規則に基づきブランチを作成して作業を開始する。
+## AI Acknowledgement
+This project is developed with the active collaboration of AI agents.
+- **Gemini CLI**: Acting as a primary developer and architect.
+- **GitHub Copilot CLI**: Providing development support and suggestions.
