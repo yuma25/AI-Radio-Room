@@ -49,5 +49,6 @@ pnpm check
 
 ## 共同開発者 (Contributors)
 
-- [Gemini CLI](https://github.com/google-gemini/gemini-cli) - 開発アシスタント & メンター
-- [GitHub Copilot CLI](https://github.com/features/copilot) - 開発支援
+| [<img src="https://github.com/google-gemini.png" width="100px;"/><br /><sub><b>Gemini CLI</b></sub>](https://github.com/google-gemini/gemini-cli) | [<img src="https://github.com/github.png" width="100px;"/><br /><sub><b>GitHub Copilot</b></sub>](https://github.com/features/copilot) | [<img src="https://github.com/yuma25.png" width="100px;"/><br /><sub><b>yuma25</b></sub>](https://github.com/yuma25) |
+| :---: | :---: | :---: |
+| 開発アシスタント & メンター | 開発支援 | プロジェクトオーナー |
