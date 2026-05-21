@@ -46,3 +46,8 @@ pnpm db
 ```bash
 pnpm check
 ```
+
+## 共同開発者 (Contributors)
+
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) - 開発アシスタント & メンター
+- [GitHub Copilot CLI](https://github.com/features/copilot) - 開発支援
