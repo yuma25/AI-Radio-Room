@@ -1,0 +1,63 @@
+# 利用可能な Gemini モデル一覧
+
+このドキュメントは、`backend/cmd/list_models/main.go` を実行して取得した利用可能なモデルのリストを記録したものである。
+
+## 取得日時
+2026年5月22日
+
+## モデル一覧
+
+| モデル名 (Name) | 表示名 (DisplayName) |
+| :--- | :--- |
+| models/gemini-2.5-flash | Gemini 2.5 Flash |
+| models/gemini-2.5-pro | Gemini 2.5 Pro |
+| models/gemini-2.0-flash | Gemini 2.0 Flash |
+| models/gemini-2.0-flash-001 | Gemini 2.0 Flash 001 |
+| models/gemini-2.0-flash-lite-001 | Gemini 2.0 Flash-Lite 001 |
+| models/gemini-2.0-flash-lite | Gemini 2.0 Flash-Lite |
+| models/gemini-2.5-flash-preview-tts | Gemini 2.5 Flash Preview TTS |
+| models/gemini-2.5-pro-preview-tts | Gemini 2.5 Pro Preview TTS |
+| models/gemma-4-26b-a4b-it | Gemma 4 26B A4B IT |
+| models/gemma-4-31b-it | Gemma 4 31B IT |
+| models/gemini-flash-latest | Gemini Flash Latest |
+| models/gemini-flash-lite-latest | Gemini Flash-Lite Latest |
+| models/gemini-pro-latest | Gemini Pro Latest |
+| models/gemini-2.5-flash-lite | Gemini 2.5 Flash-Lite |
+| models/gemini-2.5-flash-image | Nano Banana |
+| models/gemini-3-pro-preview | Gemini 3 Pro Preview |
+| models/gemini-3-flash-preview | Gemini 3 Flash Preview |
+| models/gemini-3.1-pro-preview | Gemini 3.1 Pro Preview |
+| models/gemini-3.1-pro-preview-customtools | Gemini 3.1 Pro Preview Custom Tools |
+| models/gemini-3.1-flash-lite-preview | Gemini 3.1 Flash Lite Preview |
+| models/gemini-3.1-flash-lite | Gemini 3.1 Flash Lite |
+| models/gemini-3-pro-image-preview | Nano Banana Pro |
+| models/nano-banana-pro-preview | Nano Banana Pro |
+| models/gemini-3.1-flash-image-preview | Nano Banana 2 |
+| models/gemini-3.5-flash | Gemini 3.5 Flash |
+| models/lyria-3-clip-preview | Lyria 3 Clip Preview |
+| models/lyria-3-pro-preview | Lyria 3 Pro Preview |
+| models/gemini-3.1-flash-tts-preview | Gemini 3.1 Flash TTS Preview |
+| models/gemini-robotics-er-1.5-preview | Gemini Robotics-ER 1.5 Preview |
+| models/gemini-robotics-er-1.6-preview | Gemini Robotics-ER 1.6 Preview |
+| models/gemini-2.5-computer-use-preview-10-2025 | Gemini 2.5 Computer Use Preview 10-2025 |
+| models/antigravity-preview-05-2026 | Antigravity Agent Preview |
+| models/deep-research-max-preview-04-2026 | Deep Research Max Preview (Apr-21-2026) |
+| models/deep-research-preview-04-2026 | Deep Research Preview (Apr-21-2026) |
+| models/deep-research-pro-preview-12-2025 | Deep Research Pro Preview (Dec-12-2025) |
+| models/gemini-embedding-001 | Gemini Embedding 001 |
+| models/gemini-embedding-2-preview | Gemini Embedding 2 Preview |
+| models/gemini-embedding-2 | Gemini Embedding 2 |
+| models/aqa | Model that performs Attributed Question Answering. |
+| models/imagen-4.0-generate-001 | Imagen 4 |
+| models/imagen-4.0-ultra-generate-001 | Imagen 4 Ultra |
+| models/imagen-4.0-fast-generate-001 | Imagen 4 Fast |
+| models/veo-2.0-generate-001 | Veo 2 |
+| models/veo-3.0-generate-001 | Veo 3 |
+| models/veo-3.0-fast-generate-001 | Veo 3 fast |
+| models/veo-3.1-generate-preview | Veo 3.1 |
+| models/veo-3.1-fast-generate-preview | Veo 3.1 fast |
+| models/veo-3.1-lite-generate-preview | Veo 3.1 lite |
+| models/gemini-2.5-flash-native-audio-latest | Gemini 2.5 Flash Native Audio Latest |
+| models/gemini-2.5-flash-native-audio-preview-09-2025 | Gemini 2.5 Flash Native Audio Preview 09-2025 |
+| models/gemini-2.5-flash-native-audio-preview-12-2025 | Gemini 2.5 Flash Native Audio Preview 12-2025 |
+| models/gemini-3.1-flash-live-preview | Gemini 3.1 Flash Live Preview |
