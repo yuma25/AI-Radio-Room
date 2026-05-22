@@ -1,13 +1,59 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>AI Radio Room - Studio</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- 設定サイドバー -->
+      <aside id="settings-sidebar" class="sidebar hidden">
+        <div class="sidebar-header">
+          <h2>番組設定</h2>
+          <button id="close-settings" class="icon-button">&times;</button>
+        </div>
+        <div class="sidebar-content">
+          <section>
+            <h3>キャラクター設定</h3>
+            <div id="character-list">
+              <!-- 動的に追加されるキャラクターフォーム -->
+            </div>
+          </section>
+          <section>
+            <h3>構成ルール</h3>
+            <ul id="rule-list"></ul>
+            <input type="text" id="new-rule" placeholder="新しいルールを追加..." />
+          </section>
+        </div>
+      </aside>
+
+      <!-- メインチャットエリア -->
+      <main class="main-layout">
+        <header class="app-header">
+          <div class="broadcast-status">
+            <span class="status-indicator inactive"></span>
+            <h1 id="program-title">AI Radio Room</h1>
+          </div>
+          <button id="open-settings" class="icon-button">⚙️ 設定</button>
+        </header>
+
+        <section id="chat-area" class="chat-container">
+          <div id="message-list" class="message-list">
+            <!-- セリフの吹き出しがここに追加される -->
+          </div>
+        </section>
+
+        <footer class="controls">
+          <div class="input-group">
+            <input type="text" id="theme-input" placeholder="放送テーマを入力（例：未来の技術）..." />
+            <button id="start-broadcast" class="primary-button">放送開始</button>
+            <button id="stop-broadcast" class="secondary-button hidden">放送終了</button>
+          </div>
+        </footer>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
