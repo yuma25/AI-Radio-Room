@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const voice = new VoicePlayer(); // デフォルトで http://localhost:8080 を使用
     // new SidebarUI(); // TODO: サイドバーUIがHTMLから削除されているため無効化
 
+    // FOUC対策: JSの準備が整ったらbodyをフェードインさせる
+    document.body.classList.add("ready");
+
     // 音声の再生開始に合わせてUIにテキストを描画する（同期処理）
     voice.onPlayStart = (item: ScriptItem) => {
       chat.addMessage(item);

@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Radio Room</title>
+    <style>
+      /* FOUC対策: JSとCSSの読み込みが終わるまで画面を隠す */
+      body {
+        opacity: 0;
+        transition: opacity 0.3s ease-in;
+      }
+      body.ready {
+        opacity: 1;
+      }
+    </style>
   </head>
   <body>
     <div id="app">
