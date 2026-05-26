@@ -44,7 +44,7 @@ export class ChatUI {
     messageDiv.appendChild(textP);
 
     this.messageList.appendChild(messageDiv);
-    this.scrollToBottom();
+    this.scrollToBottom(true); // 初回追加時は強制スクロール判定を通す
 
     // タイプライターアニメーション
     const fullText = item.text;
@@ -53,13 +53,13 @@ export class ChatUI {
     const typingInterval = setInterval(() => {
       textP.textContent = fullText.slice(0, currentIndex + 1);
       currentIndex++;
-      this.scrollToBottom(); // 文字が追加されるたびにスクロールを追従させる
+      this.scrollToBottom(false); // 文字追加時はユーザーのスクロール状態を尊重する
 
       if (currentIndex >= fullText.length) {
         clearInterval(typingInterval);
         textP.classList.remove("cursor"); // アニメーション終了時にカーソルを消す
       }
-    }, 50); // 1文字あたりの表示速度 (ミリ秒)
+    }, 40); // 1文字あたりの表示速度 (ミリ秒) を微調整
   }
 
   /**
@@ -70,14 +70,31 @@ export class ChatUI {
   }
 
   /**
-   * scrollToBottom は、メッセージコンテナを一番下までスクロールさせる内部メソッドである。
+   * ユーザーが過去のメッセージを読むために上にスクロールしているかを判定する。
    */
-  private scrollToBottom(): void {
+  private isUserScrolledUp(): boolean {
+    const container = this.messageList.parentElement;
+    if (!container) return false;
+    // 下部から 50px 以上上にスクロールしていれば、ユーザーが過去を見ていると判定
+    return (
+      container.scrollHeight - container.scrollTop - container.clientHeight > 50
+    );
+  }
+
+  /**
+   * scrollToBottom は、メッセージコンテナを一番下までスクロールさせる内部メソッドである。
+   * @param force [boolean] ユーザーのスクロール位置を無視して強制的に下へ移動するか
+   */
+  private scrollToBottom(force: boolean = false): void {
+    if (!force && this.isUserScrolledUp()) {
+      return; // ユーザーが上にスクロールしている場合は追従しない
+    }
+
     const container = this.messageList.parentElement;
     if (container) {
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: "smooth",
+        behavior: "auto", // タイピング中は smooth より auto の方がカクつかない
       });
     }
   }

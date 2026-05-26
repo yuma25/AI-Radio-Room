@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const voice = new VoicePlayer(); // デフォルトで http://localhost:8080 を使用
     new SidebarUI();
 
+    // 音声の再生開始に合わせてUIにテキストを描画する（同期処理）
+    voice.onPlayStart = (item: ScriptItem) => {
+      chat.addMessage(item);
+    };
+
     // 2. [内部] 放送開始ボタンのイベント設定
     const startBtn = document.getElementById("start-broadcast");
     const themeInput = document.getElementById(
@@ -77,8 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   const item: ScriptItem = JSON.parse(jsonStr);
                   console.log("📥 受信データ:", item);
 
-                  // [内部] 受信したセリフを UI に反映し、音声を再生キューに追加する。
-                  chat.addMessage(item);
+                  // [内部] 受信したセリフを音声再生キューに追加する。描画は onPlayStart に委譲する。
                   voice.enqueue(item);
                 } catch (e) {
                   console.warn("JSON パース失敗:", e, line);

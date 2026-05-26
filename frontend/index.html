@@ -4,57 +4,34 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Radio Room - Studio</title>
+    <title>AI Radio Room</title>
   </head>
   <body>
     <div id="app">
-      <!-- 設定サイドバー -->
-      <aside id="settings-sidebar" class="sidebar hidden">
-        <div class="sidebar-header">
-          <h2>番組設定</h2>
-          <button id="close-settings" class="icon-button">&times;</button>
-        </div>
-        <div class="sidebar-content">
-          <section>
-            <h3>キャラクター設定</h3>
-            <div id="character-list">
-              <!-- 動的に追加されるキャラクターフォーム -->
-            </div>
-          </section>
-          <section>
-            <h3>構成ルール</h3>
-            <ul id="rule-list"></ul>
-            <input type="text" id="new-rule" placeholder="新しいルールを追加..." />
-          </section>
-        </div>
-      </aside>
-
-      <!-- メインチャットエリア -->
+      <!-- メインエリア -->
       <main class="main-layout">
-        <header class="app-header studio-header">
-          <div class="broadcast-status">
-            <div id="on-air-indicator" class="on-air-sign">ON AIR</div>
-            <h1 id="program-title">AI Radio Room Studio</h1>
+        <!-- グラスモーフィズムなヘッダー（プレイヤー風） -->
+        <header class="glass-header">
+          <div class="player-info">
+            <div id="on-air-indicator" class="status-dot"></div>
+            <h1 id="program-title">AI Radio Player</h1>
           </div>
-          <button id="open-settings" class="icon-button">⚙️ SETTINGS</button>
         </header>
 
-        <section id="chat-area" class="chat-container studio-monitor">
+        <!-- メッセージエリア（ニューモーフィズムなカード） -->
+        <section id="chat-area" class="chat-container">
           <div id="message-list" class="message-list">
-            <!-- セリフの吹き出しがここに追加される -->
+            <!-- セリフが追加される -->
           </div>
         </section>
 
-        <footer class="controls mixer-console">
+        <!-- コントロールエリア（ニューモーフィズム） -->
+        <footer class="controls neumorphic-panel">
           <div class="input-group">
-            <div class="mixer-channel">
-              <label for="theme-input" class="mixer-label">THEME INPUT</label>
-              <input type="text" id="theme-input" class="mixer-input" placeholder="放送テーマを入力（例：未来の技術）..." />
-            </div>
-            <div class="mixer-actions">
-              <button id="start-broadcast" class="mixer-button primary">START REC</button>
-              <button id="stop-broadcast" class="mixer-button danger hidden">CUT</button>
-            </div>
+            <input type="text" id="theme-input" class="neumorphic-input" placeholder="テーマを入力..." />
+            <button id="start-broadcast" class="neumorphic-button primary">
+              <span class="icon">▶</span>
+            </button>
           </div>
         </footer>
       </main>

@@ -14,6 +14,12 @@ export class VoicePlayer {
   private baseUrl: string;
 
   /**
+   * 音声の再生が開始された時に呼び出されるコールバック。
+   * UIの描画（テキストの表示）を音声と同期させるために使用する。
+   */
+  public onPlayStart?: (item: ScriptItem) => void;
+
+  /**
    * コンストラクタである。
    * @param baseUrl [string] バックエンドのベースURL (例: http://localhost:8080)
    */
@@ -51,6 +57,8 @@ export class VoicePlayer {
         await this.play(item);
       } catch (error) {
         console.error("音声再生エラー:", error);
+        // エラー時もUIを進めるためコールバックを呼ぶ
+        if (this.onPlayStart) this.onPlayStart(item);
       }
     }
 
@@ -99,6 +107,12 @@ export class VoicePlayer {
 
           // 再生開始
           console.log(`再生中...: ${item.text}`);
+
+          // UIと同期させるため、再生開始直前にコールバックを呼ぶ
+          if (this.onPlayStart) {
+            this.onPlayStart(item);
+          }
+
           audio.play().catch(reject);
         })
         .catch(reject);
