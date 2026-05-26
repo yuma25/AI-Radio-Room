@@ -4,7 +4,7 @@
  */
 import "./style.css";
 import { ChatUI } from "./ui/chat";
-import { SidebarUI } from "./ui/sidebar";
+// import { SidebarUI } from "./ui/sidebar"; // TODO: UI刷新に伴い一時無効化
 import { VoicePlayer } from "./voice/player";
 import { ScriptItem } from "./types";
 
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. [内部] 各 UI クラスおよび音声プレイヤーの初期化
     const chat = new ChatUI("message-list");
     const voice = new VoicePlayer(); // デフォルトで http://localhost:8080 を使用
-    new SidebarUI();
+    // new SidebarUI(); // TODO: サイドバーUIがHTMLから削除されているため無効化
 
     // 音声の再生開始に合わせてUIにテキストを描画する（同期処理）
     voice.onPlayStart = (item: ScriptItem) => {
