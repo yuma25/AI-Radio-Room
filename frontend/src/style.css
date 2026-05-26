@@ -150,16 +150,70 @@ body {
   }
 }
 
-/* --- チャットエリア --- */
-.chat-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  background-image: radial-gradient(
-    circle at 50% 50%,
-    #202225 0%,
-    #1a1c1e 100%
-  );
+/* --- スタジオ風ヘッダーと ON AIR サイン --- */
+.studio-header {
+  background-color: #111;
+  border-bottom: 2px solid #333;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+#program-title {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: #888;
+}
+
+.on-air-sign {
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+  font-size: 1.5rem;
+  padding: 0.2rem 1rem;
+  border: 2px solid #555;
+  border-radius: 4px;
+  color: #555;
+  background-color: #111;
+  letter-spacing: 4px;
+  transition: all 0.3s ease;
+}
+
+.on-air-sign.active {
+  color: #fff;
+  border-color: #ff0000;
+  background-color: #aa0000;
+  box-shadow:
+    0 0 15px #ff0000,
+    inset 0 0 10px #ff0000;
+  text-shadow: 0 0 5px #fff;
+  animation: onAirPulse 2s infinite;
+}
+
+@keyframes onAirPulse {
+  0% {
+    box-shadow:
+      0 0 15px #ff0000,
+      inset 0 0 10px #ff0000;
+  }
+  50% {
+    box-shadow:
+      0 0 5px #ff0000,
+      inset 0 0 2px #ff0000;
+  }
+  100% {
+    box-shadow:
+      0 0 15px #ff0000,
+      inset 0 0 10px #ff0000;
+  }
+}
+
+/* --- チャットエリア (スタジオモニター風) --- */
+.chat-container.studio-monitor {
+  background-color: #0a0a0a;
+  background-image:
+    linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
 }
 
 .message-list {
@@ -170,84 +224,153 @@ body {
   margin: 0 auto;
 }
 
-/* 吹き出しの基本スタイル */
+/* モニター風メッセージボックス */
 .message {
   max-width: 80%;
   padding: 0.8rem 1.2rem;
-  border-radius: 1rem;
+  border-radius: 4px;
   position: relative;
   line-height: 1.5;
-  animation: fadeInSlide 0.3s ease-out;
-}
-
-@keyframes fadeInSlide {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  font-family: monospace;
+  border-left: 4px solid var(--border-color);
+  background-color: rgba(30, 30, 30, 0.9);
+  color: #0f0; /* デフォルトのモニターグリーン */
+  text-shadow: 0 0 2px rgba(0, 255, 0, 0.5);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .message .speaker-name {
   font-size: 0.75rem;
   font-weight: bold;
   margin-bottom: 0.3rem;
-  display: block;
-  opacity: 0.8;
+  display: inline-block;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 2px;
 }
 
-/* 役割別カラー */
+/* 役割別カラー（サイバーパンク風アレンジ） */
 .message.mc {
   align-self: flex-start;
-  background-color: var(--bubble-mc);
-  border-bottom-left-radius: 0.2rem;
+  border-left-color: #00ffff;
+  color: #ccffff;
 }
 
 .message.guest-a {
   align-self: flex-end;
-  background-color: var(--bubble-guest-a);
-  border-bottom-right-radius: 0.2rem;
+  border-right: 4px solid #ff00ff;
+  border-left: none;
+  color: #ffccff;
+  text-align: right;
 }
 
 .message.guest-b {
   align-self: flex-start;
-  background-color: var(--bubble-guest-b);
-  border-bottom-left-radius: 0.2rem;
+  border-left-color: #ffff00;
+  color: #ffffcc;
 }
 
-/* --- コントロールエリア --- */
-.controls {
-  height: var(--controls-height);
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--panel-bg);
+/* --- コントロールエリア (ミキサー風) --- */
+.mixer-console {
+  height: auto;
+  padding: 1.5rem;
+  border-top: 4px solid #444;
+  background: linear-gradient(to bottom, #2a2a2a, #111);
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
-.input-group {
+.mixer-console .input-group {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
   max-width: 800px;
   margin: 0 auto;
 }
 
-input[type="text"] {
-  flex: 1;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 0.8rem 1rem;
-  border-radius: 0.5rem;
-  outline: none;
+.mixer-channel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: #222;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #111;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-input[type="text"]:focus {
-  border-color: var(--primary-color);
+.mixer-label {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #aaa;
+  letter-spacing: 1px;
 }
 
-/* --- ボタン共通 --- */
+.mixer-input {
+  background-color: #000;
+  border: 1px inset #333;
+  color: #0f0;
+  font-family: monospace;
+  padding: 0.8rem;
+  border-radius: 2px;
+}
+
+.mixer-input:focus {
+  outline: 1px solid #0f0;
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+}
+
+.mixer-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.mixer-button {
+  padding: 0.8rem 2rem;
+  font-family: "Arial Black", sans-serif;
+  font-weight: bold;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  border: 2px solid #111;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow:
+    0 4px 0 #111,
+    0 5px 5px rgba(0, 0, 0, 0.5);
+}
+
+.mixer-button:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 0 0 #111,
+    0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mixer-button.primary {
+  background-color: #aa0000;
+  color: #fff;
+  border-color: #660000;
+}
+.mixer-button.primary:hover {
+  background-color: #cc0000;
+}
+
+.mixer-button.danger {
+  background-color: #222;
+  color: #ff4444;
+  border-color: #111;
+}
+
+/* タイプライター用のカーソル点滅 */
+.cursor::after {
+  content: "▋";
+  animation: blink 1s step-start infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
 .primary-button {
   background-color: var(--primary-color);
   color: white;

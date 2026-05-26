@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const themeInput = document.getElementById(
       "theme-input",
     ) as HTMLInputElement;
+    const onAirIndicator = document.getElementById("on-air-indicator");
 
     if (startBtn && themeInput) {
       startBtn.addEventListener("click", async () => {
@@ -32,6 +33,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // 画面の初期化
         chat.clear();
         startBtn.setAttribute("disabled", "true");
+        if (onAirIndicator) {
+          onAirIndicator.classList.add("active");
+        }
 
         try {
           // [標準] fetch API を使用して、バックエンドのストリーミングエンドポイントを呼び出す。
@@ -92,6 +96,9 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         } finally {
           startBtn.removeAttribute("disabled");
+          if (onAirIndicator) {
+            onAirIndicator.classList.remove("active");
+          }
           console.log("🏁 放送ストリームが終了した。");
         }
       });

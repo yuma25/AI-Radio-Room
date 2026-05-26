@@ -21,11 +21,12 @@ export class ChatUI {
 
   /**
    * addMessage は、新しいセリフを画面に追加し、最下部へスクロールするメソッドである。
+   * タイプライター風のアニメーションで1文字ずつテキストを表示する。
    *
    * 内部処理:
    * - 1. [内部] 引数から HTML 要素を生成し、適切な CSS クラス (mc, guest-a, guest-b) を付与する。
    * - 2. [標準] `appendChild()` を使用して DOM に追加する。
-   * - 3. [内部] `scrollToBottom()` を呼び出し、最新のメッセージが見えるように調整する。
+   * - 3. [内部] `setInterval` を用いて、テキストを1文字ずつ追加表示する。
    * @param item [ScriptItem] AI から受信したセリフデータ
    */
   public addMessage(item: ScriptItem): void {
@@ -37,13 +38,28 @@ export class ChatUI {
     nameSpan.textContent = item.speaker.toUpperCase();
 
     const textP = document.createElement("p");
-    textP.textContent = item.text;
+    textP.classList.add("cursor"); // 点滅カーソルを追加
 
     messageDiv.appendChild(nameSpan);
     messageDiv.appendChild(textP);
 
     this.messageList.appendChild(messageDiv);
     this.scrollToBottom();
+
+    // タイプライターアニメーション
+    const fullText = item.text;
+    let currentIndex = 0;
+
+    const typingInterval = setInterval(() => {
+      textP.textContent = fullText.slice(0, currentIndex + 1);
+      currentIndex++;
+      this.scrollToBottom(); // 文字が追加されるたびにスクロールを追従させる
+
+      if (currentIndex >= fullText.length) {
+        clearInterval(typingInterval);
+        textP.classList.remove("cursor"); // アニメーション終了時にカーソルを消す
+      }
+    }, 50); // 1文字あたりの表示速度 (ミリ秒)
   }
 
   /**

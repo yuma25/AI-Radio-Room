@@ -31,25 +31,30 @@
 
       <!-- メインチャットエリア -->
       <main class="main-layout">
-        <header class="app-header">
+        <header class="app-header studio-header">
           <div class="broadcast-status">
-            <span class="status-indicator inactive"></span>
-            <h1 id="program-title">AI Radio Room</h1>
+            <div id="on-air-indicator" class="on-air-sign">ON AIR</div>
+            <h1 id="program-title">AI Radio Room Studio</h1>
           </div>
-          <button id="open-settings" class="icon-button">⚙️ 設定</button>
+          <button id="open-settings" class="icon-button">⚙️ SETTINGS</button>
         </header>
 
-        <section id="chat-area" class="chat-container">
+        <section id="chat-area" class="chat-container studio-monitor">
           <div id="message-list" class="message-list">
             <!-- セリフの吹き出しがここに追加される -->
           </div>
         </section>
 
-        <footer class="controls">
+        <footer class="controls mixer-console">
           <div class="input-group">
-            <input type="text" id="theme-input" placeholder="放送テーマを入力（例：未来の技術）..." />
-            <button id="start-broadcast" class="primary-button">放送開始</button>
-            <button id="stop-broadcast" class="secondary-button hidden">放送終了</button>
+            <div class="mixer-channel">
+              <label for="theme-input" class="mixer-label">THEME INPUT</label>
+              <input type="text" id="theme-input" class="mixer-input" placeholder="放送テーマを入力（例：未来の技術）..." />
+            </div>
+            <div class="mixer-actions">
+              <button id="start-broadcast" class="mixer-button primary">START REC</button>
+              <button id="stop-broadcast" class="mixer-button danger hidden">CUT</button>
+            </div>
           </div>
         </footer>
       </main>
