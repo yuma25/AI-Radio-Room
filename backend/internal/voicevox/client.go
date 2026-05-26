@@ -18,6 +18,7 @@ import (
 type Client struct {
 	baseURL string       // VOICEVOX Engine のベースURL (例: http://localhost:50021)
 	http    *http.Client // 再利用可能な HTTP クライアント
+	Cache   *VoiceCache  // 音声データのキャッシュ
 }
 
 /**
@@ -29,21 +30,30 @@ func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL: baseURL,
 		http:    &http.Client{},
+		Cache:   NewVoiceCache(),
 	}
 }
 
 /**
  * GenerateWav は、指定されたテキストと話者IDから音声データ(WAV)を生成する。
+ * キャッシュが存在する場合はそれを返し、存在しない場合は新たに生成してキャッシュに保存する。
  *
  * 内部処理:
- * - 1. `audio_query` エンドポイントを呼び出し、音声合成用のパラメータを取得する。
- * - 2. 取得したパラメータを用いて `synthesis` エンドポイントを呼び出し、WAV データを生成する。
+ * - 1. キャッシュを確認し、存在すれば即座に返す。
+ * - 2. `audio_query` エンドポイントを呼び出し、音声合成用のパラメータを取得する。
+ * - 3. 取得したパラメータを用いて `synthesis` エンドポイントを呼び出し、WAV データを生成する。
+ * - 4. 生成されたデータをキャッシュに保存する。
  * @param ctx [context.Context] コンテキスト
  * @param text [string] 合成するテキスト
  * @param speakerID [int] 話者ID
  * @return ([]byte, error) WAVデータ
  */
 func (c *Client) GenerateWav(ctx context.Context, text string, speakerID int) ([]byte, error) {
+	key := GenerateKey(text, speakerID)
+	if data, ok := c.Cache.Get(key); ok {
+		return data, nil
+	}
+
 	// 1. AudioQuery の生成
 	query, err := c.createAudioQuery(ctx, text, speakerID)
 	if err != nil {
@@ -55,6 +65,9 @@ func (c *Client) GenerateWav(ctx context.Context, text string, speakerID int) ([
 	if err != nil {
 		return nil, fmt.Errorf("synthesis 実行失敗: %w", err)
 	}
+
+	// キャッシュに保存
+	c.Cache.Set(key, wav)
 
 	return wav, nil
 }
