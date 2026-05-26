@@ -24,10 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // --- BGM機能の初期化 ---
-    // ※今回はダミーのフリーBGM URLを使用する。本番では public/audio/bgm.mp3 等に置き換える。
-    const bgmAudio = new Audio(
-      "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3",
-    );
+    // ローカルに配置したフリー音源（public/audio/bgm.mp3）を使用する。
+    const bgmAudio = new Audio("/audio/bgm.mp3");
     bgmAudio.loop = true;
     bgmAudio.volume = 0.1; // 初期音量
 
