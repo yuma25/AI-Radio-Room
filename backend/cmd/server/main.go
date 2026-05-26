@@ -31,14 +31,22 @@ import (
 
 /**
  * メインメソッドである。
+ * プロジェクトの起動シーケンスを制御し、すべての基盤コンポーネントが正常に準備されたことを確認した上でサーバーを開始する。
  *
  * 内部処理:
  * - 1. `loadEnv()` を呼び出し、設定をロードする。
- * - 2. `ai.NewGeminiClient(ctx)` を呼び出し、AI クライアントを初期化する。
- * - 3. `connectDB(ctx)` を呼び出し、データベース接続を確立する。
- * - 4. `db.NewRepository(conn)` を呼び出し、リポジトリを生成する。
- * - 5. `api.NewServer(aiClient, repo)` を呼び出し、API サーバー構造体を生成する。
- * - 6. `http.ListenAndServe(addr, handler)` を呼び出し、8080 ポートで HTTP サーバーを起動する。
+ * - 2. `context.Background()` を呼び出し、アプリケーションの基底となるコンテキストを生成する。
+ *      - [技術的背景]: Go における Context は、リクエストのキャンセル、タイムアウト、およびスコープ内の値（トレースID等）を伝播させるための標準的な手段である。
+ *      - ここで使用する `Background()` は、サーバーの生存期間全体にわたる「根（Root）」としての役割を持ち、初期化中の SDK 呼び出しやコネクションの管理に利用される。
+ * - 3. `ai.NewGeminiClient(ctx)` を呼び出し、Google Gemini API との接続インターフェースを初期化する。
+ *      - SDK 内部でのネットワーク接続確立や認証情報の検証に、生成した基底コンテキストを渡す。
+ * - 4. `connectDB(ctx)` を呼び出し、PostgreSQL データベースへの物理接続を確立する。
+ *      - 接続タイムアウトなどの制御をコンテキスト経由で行う。
+ * - 5. `db.NewRepository(conn)` を呼び出し、データベース接続オブジェクト（conn）をラップしたリポジトリを生成する。
+ *      - これにより、上位レイレイヤーは SQL の詳細を意識せずにデータ操作が可能となる（依存性の注入）。
+ * - 6. `api.NewServer(aiClient, repo)` を呼び出し、ビジネスロジックと HTTP インターフェースを橋渡しする API サーバー構造体を生成する。
+ * - 7. `http.ListenAndServe(addr, handler)` を呼び出し、指定されたアドレス（:8080）で HTTP サーバーを起動する。
+ *      - エラーが発生した場合は、`log.Fatalf` によりプロセスを異常終了させ、システム管理者に通知する。
  * @param なし
  * @return なし
  */
@@ -46,28 +54,37 @@ func main() {
 	// --- 1. 設定のロード ---
 	loadEnv()
 
+	// サーバー全体のライフサイクルを管理するための基底コンテキストを生成する。
+	// 初期化フェーズにおいて、各 SDK や DB 接続のタイムアウト・キャンセルの制御に使用される。
 	ctx := context.Background()
 
 	// --- 2. 基盤コンポーネントの初期化 ---
+	// [SDK] Google Gemini API クライアントを初期化する。
 	aiClient, err := ai.NewGeminiClient(ctx)
 	if err != nil {
 		log.Fatalf("❌ AI クライアント初期化失敗: %v", err)
 	}
+	// リソースを安全に解放するため、プログラム終了時に Close を実行するよう予約する。
 	defer aiClient.Close()
 
+	// データベース接続の確立。
 	conn, err := connectDB(ctx)
 	if err != nil {
 		log.Fatalf("❌ データベース接続失敗: %v", err)
 	}
+	// コネクションのクローズを予約する。
 	defer conn.Close(ctx)
 
+	// リポジトリパターンの適用。
 	repo := db.NewRepository(conn)
 
 	// --- 3. API サーバーの起動 ---
+	// API サーバーに AI クライアントと DB リポジトリを注入する。
 	server := api.NewServer(aiClient, repo)
 	addr := ":8080"
 	fmt.Printf("🚀 AI Radio Room Backend 起動完了 [ %s ]\n", addr)
 
+	// HTTP サーバーの開始。
 	if err := http.ListenAndServe(addr, server.Routes()); err != nil {
 		log.Fatalf("❌ サーバー停止: %v", err)
 	}
