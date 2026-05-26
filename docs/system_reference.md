@@ -36,22 +36,50 @@
     - `json.Unmarshal()` を使用して、Go の構造体スライス `[]ai.ScriptItem` に変換する。
 
 ### 1.3 データベース保存フェーズ (リポジトリ操作)
-※本フェーズはリポジトリ単体では完成しているが、テストツールでは現在未結合である。本番サーバーでは以下の順序で実行される。
+本番サーバーでは、台本生成と並行して以下の順序で実行される。
 
 1. **DB リポジトリの初期化**:
     - `pgx.Connect(ctx, dbURL)` で物理接続を確立後、`db.NewRepository(conn)` でリポジトリインスタンスを生成する。
 2. **放送セッションの作成**:
     - `repo.CreateBroadcast(ctx, "テーマ名")` を呼び出す。
     - `broadcasts` テーブルに新規レコードを作成し、一意な `broadcast_id` (UUID) を取得する。
-3. **セリフの保存**:
-    - 生成された `[]ai.ScriptItem` をループで回し、`repo.SaveTranscript(ctx, &transcript)` を呼び出す。
-    - 1 行ごとに `transcripts` テーブルに保存し、DB 側で決定された ID と時刻を構造体に同期する。
+3. **セリフの逐次保存と配信**:
+    - 生成された `[]ai.ScriptItem` をループで回し、1 行ごとに `repo.SaveTranscript(ctx, &transcript)` を呼び出して DB へ保存すると同時に、SSE を通じてクライアントへ送出する。
 4. **放送セッションの終了**:
-    - `repo.EndBroadcast(ctx, broadcast_id)` を呼び出し、該当放送の終了時刻 (`ended_at`) を現在時刻で更新する。
+    - 全てのセリフの処理が完了後、`repo.EndBroadcast(ctx, broadcast_id)` を呼び出し、該当放送の終了時刻 (`ended_at`) を更新する。
 
 ---
 
-## 2. データ定義詳細
+## 2. API サーバーと通信プロトコル (`backend/internal/api`)
+
+### 2.1 ルーティング構造
+`go-chi/chi` ルーターを使用し、以下のエンドポイントを提供する。
+
+- **`POST /api/broadcasts`**:
+    - **役割**: 放送開始リクエストを受け付け、台本生成とリアルタイム配信を開始する。
+    - **入力**: `{"theme": "テーマ名"}` (JSON)
+    - **出力**: `text/event-stream` (SSE)
+- **`GET /api/broadcasts`**:
+    - **役割**: 過去の放送履歴一覧を取得する（※実装予定）。
+
+### 2.2 SSE (Server-Sent Events) 配信フロー
+放送開始 API におけるリアルタイム配信の詳細は以下の通りである。
+
+1. **レスポンスヘッダーの設定**:
+    - `Content-Type: text/event-stream`
+    - `Cache-Control: no-cache`
+    - `Connection: keep-alive`
+2. **データの送出**:
+    - AI が生成した台本を 1 セリフごとに JSON 化し、`data: {"speaker": "...", "text": "...", "emotion": "..."}\n\n` の形式で書き出す。
+3. **バッファのフラッシュ**:
+    - `(http.Flusher).Flush()` を呼び出し、サーバー側のバッファに溜め込まず即座にクライアントへデータを送信する。
+4. **終了合図**:
+    - 全セリフの送信完了後、`event: close` カスタムイベントを送信し、クライアント側にストリームの終了を通知する。
+
+---
+
+## 3. データ定義詳細
+
 
 ### 2.1 AI 連携モデル (`backend/internal/ai`)
 

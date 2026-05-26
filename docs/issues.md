@@ -1,102 +1,56 @@
 # GitHub Issue 分割案 (Issue Roadmap)
 
-チーム開発においてコンフリクトを避け、AI（Copilot/Gemini）を最大限活用するためのIssue定義です。
+GitHub上の Issue 管理と同期させた最新のロードマップです。
 
 ---
 
 ## Issue #1: 【Backend】DBスキーマの作成とデータアクセス層の実装
+**ステータス**: ✅ Closed
 **ブランチ名**: `feat/issue-1-db-schema`
-**担当領域**: データベースとGoの接続部分
-**編集許可ファイル**:
-- `backend/migrations/001_init.sql`
-- `backend/internal/db/repository.go`
-- `backend/internal/db/models.go`
-
-**📝 AIへの指示用プロンプト**:
-```text
-[Task]
-PostgreSQLのテーブル定義と、Go言語からのデータ操作（CRUD）インターフェースを実装してください。
-docs/design.md に定義されている `broadcasts` と `transcripts` の2つのテーブルを作成します。
-
-[Requirements]
-1. `backend/migrations/001_init.sql` を作成し、2つのテーブルの CREATE TABLE 文を記述する。
-2. `backend/internal/db/models.go` を作成し、DBの各カラムに対応するGoの構造体（struct）を定義する。
-3. `backend/internal/db/repository.go` を作成し、`pgx` を使って「放送の新規作成」「セリフの保存」「放送IDに紐づく全セリフの取得」を行う関数を実装する。
-
-[Constraints]
-- main.go や他のディレクトリのファイルは絶対に修正しないこと。
-- Lint (go vet) と Format (go fmt) が通るコードであること。
-```
 
 ---
 
 ## Issue #2: 【Backend】Gemini APIによる台本自動生成ロジックの実装
+**ステータス**: ✅ Closed
 **ブランチ名**: `feat/issue-2-gemini-ai`
-**担当領域**: AIへのプロンプト送信とJSONパース
-**編集許可ファイル**:
-- `backend/internal/ai/gemini.go`
-- `backend/internal/ai/prompt.go`
-
-**📝 AIへの指示用プロンプト**:
-```text
-[Task]
-Google Generative AI (Gemini API) を使用して、3人のキャラクターによるラジオ番組の台本を生成するGoのパッケージを実装してください。
-
-[Requirements]
-1. `backend/internal/ai/gemini.go` を作成し、Gemini APIクライアントの初期化処理を書く。
-2. 引数として「テーマ（文字列）」を受け取り、Geminiにリクエストを送る関数を作成する。
-3. Geminiからのレスポンスを、指定されたJSONスキーマにパースしてGoの構造体（スライス）として返す。
-4. `backend/internal/ai/prompt.go` にシステムプロンプトの定数を定義する。
-```
 
 ---
 
-## Issue #3: 【Frontend】VOICEVOX 音声合成エンジンのクライアント実装
-**ブランチ名**: `feat/issue-3-voicevox`
-**担当領域**: フロントエンドからVOICEVOX APIを叩き、音声を鳴らす部分
+## Issue #8: 【Backend】HTTP API サーバー基盤と SSE ストリーミングの実装
+**ステータス**: 🚀 Next
+**ブランチ名**: `feat/issue-8-http-sse-server`
+**担当領域**: バックエンド HTTP API サーバー構築、SSE ストリーミングの実装
 **編集許可ファイル**:
-- `frontend/src/voice.ts`
-- `frontend/src/types.ts`
+- `backend/cmd/server/main.go`
+- `backend/internal/ai/`
+- `backend/internal/db/`
 
-**📝 AIへの指示用プロンプト**:
-```text
-[Task]
-フロントエンド(TypeScript)から、ローカルの VOICEVOX Engine (http://localhost:50021) と通信し、音声を再生するモジュールを実装してください。
+**📝 概要**:
+AIロジックとデータベースを統合し、フロントエンドに提供するための HTTP API サーバーを構築します。
 
-[Requirements]
-1. `frontend/src/types.ts` を作成し、セリフデータの型を定義する。
-2. `frontend/src/voice.ts` を作成し、`playVoice` 関数を実装する。
-3. WAVデータを取得し、ブラウザで音声を再生。終了を検知するPromiseを返すこと。
-```
+**🎯 必須要件**:
+1. chi ルーターを使用した API エンドポイントの作成
+2. `POST /api/broadcasts` : 放送開始と台本生成リクエストの受付
+3. `GET /api/broadcasts` : 過去の放送履歴一覧の取得
+4. SSE (Server-Sent Events) による台本のリアルタイム・ストリーミング配信
+5. 台本生成と同時にデータベースへの非同期保存
 
 ---
 
-## Issue #4: 【Backend】Markdown アーカイブ生成機能の実装
+## Issue #4: 【Backend】Markdown アーカイブ生成機能（設定情報含む）の実装
 **ブランチ名**: `feat/issue-4-archive`
-**担当領域**: 放送終了後に、テキストファイル（.md）を出力する部分
-**編集許可ファイル**:
-- `backend/internal/archive/markdown.go`
-- `backend/archives/` (ディレクトリ)
-
-**📝 AIへの指示用プロンプト**:
-```text
-[Task]
-放送のセリフデータを受け取り、整形されたMarkdownファイルを指定ディレクトリに出力するGoのパッケージを実装してください。
-出力形式は docs/design.md の仕様に従ってください。
-```
 
 ---
 
-## Issue #5: 【Frontend】UI制御とSSEキューイングの統合
-**ブランチ名**: `feat/issue-5-ui-sse`
-**担当領域**: UI描画、SSE受信、音声再生の同期
-**編集許可ファイル**:
-- `frontend/src/ui.ts`
-- `frontend/src/main.ts`
+## Issue #3: 【Frontend】音声再生・再生キュー管理の実装
+**ブランチ名**: `feat/issue-3-voicevox`
 
-**📝 AIへの指示用プロンプト**:
-```text
-[Task]
-SSEを受信して画面(ui.ts)と音声(voice.ts)を同期させる司令塔を実装してください。
-メッセージをキューに溜め、音声の終了を待ってから次の発言を表示・再生する排他制御を行ってください。
-```
+---
+
+## Issue #9: 【Backend】VOICEVOX 連携ロジックの実装
+**ブランチ名**: `feat/issue-9-voicevox-logic`
+
+---
+
+## Issue #10: 【Frontend】台本生成設定 (GeneratorConfig) UI の実装
+**ブランチ名**: `feat/issue-10-generator-config-ui`

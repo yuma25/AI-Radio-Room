@@ -15,48 +15,62 @@
 package main
 
 import (
-	"context" // 使用箇所: connectAndTestDB。目的: データベースへの疎通確認リクエストのタイムアウト管理のため。
-	"fmt"     // 使用箇所: main, checkGeminiAPIKey。目的: 標準出力への進捗表示およびエラーメッセージ構築のため。
-	"log"     // 使用箇所: main。目的: 致命的なエラーが発生した際にエラー内容を記録し、プロセスを異常終了させるため。
-	"os"      // 使用箇所: checkGeminiAPIKey, connectAndTestDB。目的: 環境変数から API キーや DB 接続情報を取得するため。
+	"context"  // 使用箇所: 各初期化処理。目的: DB や AI クライアントのライフサイクル管理のため。
+	"fmt"      // 使用箇所: main。目的: 起動メッセージの表示のため。
+	"log"      // 使用箇所: main。目的: 致命的エラー時の強制終了のため。
+	"net/http" // 使用箇所: main。目的: HTTP サーバーの起動のため。
+	"os"       // 使用箇所: connectDB。目的: 環境変数の取得のため。
 
-	"github.com/jackc/pgx/v5"  // 使用箇所: connectAndTestDB。目的: PostgreSQL へのネットワーク接続を確立し、疎通テストを行うため。
-	"github.com/joho/godotenv" // 使用箇所: loadEnv。目的: ローカル開発環境の `.env` ファイルを解析し、環境変数としてロードするため。
+	"backend/internal/ai"  // 使用箇所: main。目的: AI クライアントの初期化のため。
+	"backend/internal/api" // 使用箇所: main。目的: API サーバーの生成とルーティングのため。
+	"backend/internal/db"  // 使用箇所: main。目的: リポジトリの生成のため。
+
+	"github.com/jackc/pgx/v5"  // 使用箇所: connectDB。目的: PostgreSQL への接続のため。
+	"github.com/joho/godotenv" // 使用箇所: loadEnv。目的: .env のロードのため。
 )
 
 /**
  * メインメソッドである。
  *
  * 内部処理:
- * - 1. `loadEnv()` を呼び出す。
- *   - 本パッケージ内の補助関数であり、環境変数のロードを行う。
- * - 2. `checkGeminiAPIKey()` を呼び出す。
- *   - 本パッケージ内の補助関数であり、AI 設定のバリデーションを行う。
- * - 3. `connectAndTestDB()` を呼び出す。
- *   - 本パッケージ内の補助関数であり、データベースの死活監視を行う。
- * - 4. `log.Fatalf(format string, v ...any)` を使用する。
- *   - `log` パッケージの関数であり、エラーメッセージを標準エラー出力した後に `os.Exit(1)` を呼び出して終了させる役割を持つ。
- * - 5. `fmt.Println(a ...any) (n int, err error)` を使用する。
- *   - `fmt` パッケージの関数であり、最終的なステータスを標準出力に書き出す役割を持つ。
+ * - 1. `loadEnv()` を呼び出し、設定をロードする。
+ * - 2. `ai.NewGeminiClient(ctx)` を呼び出し、AI クライアントを初期化する。
+ * - 3. `connectDB(ctx)` を呼び出し、データベース接続を確立する。
+ * - 4. `db.NewRepository(conn)` を呼び出し、リポジトリを生成する。
+ * - 5. `api.NewServer(aiClient, repo)` を呼び出し、API サーバー構造体を生成する。
+ * - 6. `http.ListenAndServe(addr, handler)` を呼び出し、8080 ポートで HTTP サーバーを起動する。
  * @param なし
  * @return なし
  */
 func main() {
-	// --- 1. 設定ファイルの読み込み ---
+	// --- 1. 設定のロード ---
 	loadEnv()
 
-	// --- 2. Gemini APIキーの確認 ---
-	if err := checkGeminiAPIKey(); err != nil {
-		log.Fatalf("❌ API設定エラー: %v", err)
-	}
+	ctx := context.Background()
 
-	// --- 3. データベース接続テスト ---
-	if err := connectAndTestDB(); err != nil {
-		log.Fatalf("❌ データベース接続エラー: %v", err)
+	// --- 2. 基盤コンポーネントの初期化 ---
+	aiClient, err := ai.NewGeminiClient(ctx)
+	if err != nil {
+		log.Fatalf("❌ AI クライアント初期化失敗: %v", err)
 	}
+	defer aiClient.Close()
 
-	fmt.Println("--------------------------------------------------")
-	fmt.Println("🎉 すべての基盤チェックが成功した。サーバーを起動する準備が整っている。")
+	conn, err := connectDB(ctx)
+	if err != nil {
+		log.Fatalf("❌ データベース接続失敗: %v", err)
+	}
+	defer conn.Close(ctx)
+
+	repo := db.NewRepository(conn)
+
+	// --- 3. API サーバーの起動 ---
+	server := api.NewServer(aiClient, repo)
+	addr := ":8080"
+	fmt.Printf("🚀 AI Radio Room Backend 起動完了 [ %s ]\n", addr)
+
+	if err := http.ListenAndServe(addr, server.Routes()); err != nil {
+		log.Fatalf("❌ サーバー停止: %v", err)
+	}
 }
 
 /**
@@ -84,65 +98,19 @@ func loadEnv() {
 }
 
 /**
- * Gemini API キーの検証メソッドである。
+ * connectDB は、データベースへの接続を確立して返す補助関数である。
  *
  * 内部処理:
- * - 1. `os.Getenv(key string) string` を使用する。
- *   - `os` パッケージの関数であり、環境変数 `GEMINI_API_KEY` の値を取得する。
- * - 2. `fmt.Errorf(format string, a ...any) error` を使用する。
- *   - `fmt` パッケージの関数であり、キーが存在しない場合にエラーオブジェクトを作成して返す。
- * - 3. `fmt.Printf(format string, a ...any) (n int, err error)` を使用する。
- *   - `fmt` パッケージの関数であり、成功時にキーのマスク済みプレビューを出力する。
- * @param なし
- * @return err [error] キーが未設定の場合はエラーを、正常な場合は nil を返す。
+ * - 1. 環境変数 `DATABASE_URL` を取得する。
+ * - 2. `pgx.Connect(ctx, dbURL)` を呼び出して物理接続を行う。
+ * @param ctx [context.Context]
+ * @return [*pgx.Conn] 接続オブジェクト
+ * @return [error]
  */
-func checkGeminiAPIKey() error {
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("GEMINI_API_KEY が環境変数に設定されていない")
-	}
-	fmt.Printf("✅ Gemini APIキーの読み込みに成功した: [ %s... ]\n", apiKey[:5])
-	return nil
-}
-
-/**
- * データベース接続確認メソッドである。
- *
- * 内部処理:
- * - 1. `os.Getenv(key string) string` を使用して、接続文字列 `DATABASE_URL` を取得する。
- * - 2. `context.Background() context.Context` を使用する。
- *   - `context` パッケージの関数であり、接続操作のルートとなる空のコンテキストを生成する。
- * - 3. `pgx.Connect(ctx context.Context, connString string) (*pgx.Conn, error)` を使用する。
- *   - `github.com/jackc/pgx/v5` パッケージの関数であり、指定された URL で PostgreSQL との TCP 接続を確立する。
- * - 4. `defer (*pgx.Conn).Close(ctx context.Context) error` を使用する。
- *   - `pgx` パッケージのメソッドであり、関数のライフサイクル終了時に DB 接続を確実に切断する。
- * - 5. `(*pgx.Conn).QueryRow(ctx context.Context, sql string, args ...any) pgx.Row` を使用する。
- *   - `pgx` パッケージのメソッドであり、疎通確認用の SELECT クエリを実行する。
- * - 6. `(pgx.Row).Scan(dest ...any) error` を使用する。
- *   - `pgx` パッケージのメソッドであり、クエリの実行結果を変数に詰め込む。
- * @param なし
- * @return err [error] 接続失敗、またはクエリ実行失敗時にエラーを返す。
- */
-func connectAndTestDB() error {
+func connectDB(ctx context.Context) (*pgx.Conn, error) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		return fmt.Errorf("DATABASE_URL が環境変数に設定されていない")
+		return nil, fmt.Errorf("DATABASE_URL が未設定である")
 	}
-
-	ctx := context.Background()
-
-	conn, err := pgx.Connect(ctx, dbURL)
-	if err != nil {
-		return fmt.Errorf("データベースへの接続に失敗した: %w", err)
-	}
-	defer conn.Close(ctx)
-
-	var greeting string
-	err = conn.QueryRow(ctx, "SELECT 'PostgreSQL への接続が正常に確立された'").Scan(&greeting)
-	if err != nil {
-		return fmt.Errorf("疎通確認クエリの実行に失敗した: %w", err)
-	}
-
-	fmt.Printf("✅ %s\n", greeting)
-	return nil
+	return pgx.Connect(ctx, dbURL)
 }
