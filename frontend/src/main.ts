@@ -5,6 +5,7 @@
 import "./style.css";
 import { ChatUI } from "./ui/chat";
 import { SidebarUI } from "./ui/sidebar";
+import { VoicePlayer } from "./voice/player";
 import { ScriptItem } from "./types";
 
 /**
@@ -12,8 +13,9 @@ import { ScriptItem } from "./types";
  */
 document.addEventListener("DOMContentLoaded", () => {
   try {
-    // 1. [内部] 各 UI クラスのインスタンス化
+    // 1. [内部] 各 UI クラスおよび音声プレイヤーの初期化
     const chat = new ChatUI("message-list");
+    const voice = new VoicePlayer(); // デフォルトで http://localhost:8080 を使用
     new SidebarUI();
 
     // 2. [内部] 放送開始ボタンのイベント設定
@@ -71,8 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
                   const item: ScriptItem = JSON.parse(jsonStr);
                   console.log("📥 受信データ:", item);
 
-                  // [内部] 受信したセリフを UI に反映する。
+                  // [内部] 受信したセリフを UI に反映し、音声を再生キューに追加する。
                   chat.addMessage(item);
+                  voice.enqueue(item);
                 } catch (e) {
                   console.warn("JSON パース失敗:", e, line);
                 }
@@ -83,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("❌ 通信エラー:", error);
           chat.addMessage({
             speaker: "mc",
+            speaker_id: 2,
             text: "通信エラーが発生したため、放送を中断します。",
             emotion: "calm",
           });

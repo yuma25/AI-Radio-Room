@@ -27,7 +27,8 @@ export interface GeneratorConfig {
  * ScriptItem は、AI から受信する 1 セリフのデータである。
  */
 export interface ScriptItem {
-  speaker: string; // 発言者の role
+  speaker: string; // 発言者の役割 (mc, guest-a, guest-b)
+  speaker_id: number; // VOICEVOX の話者スタイルID
   text: string; // セリフ本文
   emotion: "normal" | "excited" | "calm"; // 感情
 }
