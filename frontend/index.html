@@ -8,13 +8,26 @@
   </head>
   <body>
     <div id="app">
+      <!-- テーマ入力モーダル -->
+      <div id="theme-modal" class="modal-overlay">
+        <div class="modal-content neumorphic-panel">
+          <h2>番組設定</h2>
+          <p>本日のトークテーマを入力してください</p>
+          <input type="text" id="modal-theme-input" class="neumorphic-input" placeholder="例：未来の技術について" />
+          <button id="modal-start-btn" class="neumorphic-button-wide primary">放送準備完了</button>
+        </div>
+      </div>
+
       <!-- メインエリア -->
       <main class="main-layout">
         <!-- グラスモーフィズムなヘッダー（プレイヤー風） -->
         <header class="glass-header">
           <div class="player-info">
             <div id="on-air-indicator" class="status-dot"></div>
-            <h1 id="program-title">AI Radio Player</h1>
+            <div class="header-titles">
+              <h1 id="program-title">AI Radio Player</h1>
+              <div id="current-theme-display" class="theme-display hidden">本日のテーマ: <span></span></div>
+            </div>
           </div>
         </header>
 
@@ -27,10 +40,12 @@
 
         <!-- コントロールエリア（ニューモーフィズム） -->
         <footer class="controls neumorphic-panel">
-          <div class="input-group">
-            <input type="text" id="theme-input" class="neumorphic-input" placeholder="テーマを入力..." />
+          <div class="input-group center">
             <button id="start-broadcast" class="neumorphic-button primary">
               <span class="icon">▶</span>
+            </button>
+            <button id="stop-broadcast" class="neumorphic-button danger hidden">
+              <span class="icon">■</span>
             </button>
           </div>
         </footer>

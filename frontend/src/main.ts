@@ -23,17 +23,39 @@ document.addEventListener("DOMContentLoaded", () => {
       chat.addMessage(item);
     };
 
-    // 2. [内部] 放送開始ボタンのイベント設定
-    const startBtn = document.getElementById("start-broadcast");
-    const themeInput = document.getElementById(
-      "theme-input",
+    // 2. モーダルとテーマ設定の処理
+    const themeModal = document.getElementById("theme-modal");
+    const modalThemeInput = document.getElementById(
+      "modal-theme-input",
     ) as HTMLInputElement;
+    const modalStartBtn = document.getElementById("modal-start-btn");
+    const currentThemeDisplay = document.getElementById(
+      "current-theme-display",
+    );
+
+    let currentTheme = "AIとの共生"; // デフォルトテーマ
+
+    if (modalStartBtn && modalThemeInput && themeModal && currentThemeDisplay) {
+      modalStartBtn.addEventListener("click", () => {
+        const inputVal = modalThemeInput.value.trim();
+        if (inputVal) {
+          currentTheme = inputVal;
+        }
+        // テーマをヘッダーに掲示してモーダルを閉じる
+        const span = currentThemeDisplay.querySelector("span");
+        if (span) span.textContent = currentTheme;
+        currentThemeDisplay.classList.remove("hidden");
+        themeModal.classList.add("hidden");
+      });
+    }
+
+    // 3. [内部] 放送開始ボタンのイベント設定
+    const startBtn = document.getElementById("start-broadcast");
     const onAirIndicator = document.getElementById("on-air-indicator");
 
-    if (startBtn && themeInput) {
+    if (startBtn) {
       startBtn.addEventListener("click", async () => {
-        const theme = themeInput.value || "AIとの共生";
-        console.log(`🎙️ 放送開始リクエスト: テーマ「${theme}」`);
+        console.log(`🎙️ 放送開始リクエスト: テーマ「${currentTheme}」`);
 
         // 画面の初期化
         chat.clear();
@@ -41,6 +63,37 @@ document.addEventListener("DOMContentLoaded", () => {
         if (onAirIndicator) {
           onAirIndicator.classList.add("active");
         }
+
+        // [演出] AIの台本生成（初回ラグ）を隠蔽するためのプレトーク（ダミーデータ）をキューに追加
+        // バックエンドがAIから台本を受け取るまでの間（数秒〜10秒）、この自己紹介を再生して時間を稼ぐ
+        const preTalks: ScriptItem[] = [
+          {
+            speaker: "mc",
+            speaker_id: 2, // 四国めたん（ノーマル）
+            text: "皆さんこんにちは！AI Radio Studio の時間がやってまいりました！メインパーソナリティの、四国めたんです。",
+            emotion: "normal",
+          },
+          {
+            speaker: "guest-a",
+            speaker_id: 3, // ずんだもん（ノーマル）
+            text: "みんなよろしくなのだ！アシスタントのずんだもんなのだ！",
+            emotion: "normal",
+          },
+          {
+            speaker: "guest-b",
+            speaker_id: 8, // 春日部つむぎ（ノーマル）
+            text: "同じくアシスタントの、春日部つむぎです。本日もよろしくお願いします。",
+            emotion: "normal",
+          },
+          {
+            speaker: "mc",
+            speaker_id: 6, // 四国めたん（ツンツン/興奮）
+            text: `本日のトークテーマは「${currentTheme}」です！今日もこの3人で、熱く語り合っていきましょう！`,
+            emotion: "excited",
+          },
+        ];
+
+        preTalks.forEach((item) => voice.enqueue(item));
 
         try {
           // [標準] fetch API を使用して、バックエンドのストリーミングエンドポイントを呼び出す。
@@ -50,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ theme }),
+            body: JSON.stringify({ theme: currentTheme }),
           });
 
           if (!response.ok || !response.body) {
