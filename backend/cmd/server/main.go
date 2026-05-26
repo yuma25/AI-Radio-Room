@@ -21,9 +21,10 @@ import (
 	"net/http" // 使用箇所: main。目的: HTTP サーバーの起動のため。
 	"os"       // 使用箇所: connectDB。目的: 環境変数の取得のため。
 
-	"backend/internal/ai"  // 使用箇所: main。目的: AI クライアントの初期化のため。
-	"backend/internal/api" // 使用箇所: main。目的: API サーバーの生成とルーティングのため。
-	"backend/internal/db"  // 使用箇所: main。目的: リポジトリの生成のため。
+	"backend/internal/ai"       // 使用箇所: main。目的: AI クライアントの初期化のため。
+	"backend/internal/api"      // 使用箇所: main。目的: API サーバーの生成とルーティングのため。
+	"backend/internal/db"       // 使用箇所: main。目的: リポジトリの生成のため。
+	"backend/internal/voicevox" // 使用箇所: main。目的: VOICEVOX クライアントの初期化のため。
 
 	"github.com/jackc/pgx/v5"  // 使用箇所: connectDB。目的: PostgreSQL への接続のため。
 	"github.com/joho/godotenv" // 使用箇所: loadEnv。目的: .env のロードのため。
@@ -44,7 +45,7 @@ import (
  *      - 接続タイムアウトなどの制御をコンテキスト経由で行う。
  * - 5. `db.NewRepository(conn)` を呼び出し、データベース接続オブジェクト（conn）をラップしたリポジトリを生成する。
  *      - これにより、上位レイレイヤーは SQL の詳細を意識せずにデータ操作が可能となる（依存性の注入）。
- * - 6. `api.NewServer(aiClient, repo)` を呼び出し、ビジネスロジックと HTTP インターフェースを橋渡しする API サーバー構造体を生成する。
+ * - 6. `api.NewServer(aiClient, repo, vvClient)` を呼び出し、ビジネスロジックと HTTP インターフェースを橋渡しする API サーバー構造体を生成する。
  * - 7. `http.ListenAndServe(addr, handler)` を呼び出し、指定されたアドレス（:8080）で HTTP サーバーを起動する。
  *      - エラーが発生した場合は、`log.Fatalf` によりプロセスを異常終了させ、システム管理者に通知する。
  * @param なし
@@ -67,6 +68,13 @@ func main() {
 	// リソースを安全に解放するため、プログラム終了時に Close を実行するよう予約する。
 	defer aiClient.Close()
 
+	// VOICEVOX クライアントの初期化。
+	vvURL := os.Getenv("VOICEVOX_URL")
+	if vvURL == "" {
+		vvURL = "http://localhost:50021" // デフォルト値
+	}
+	vvClient := voicevox.NewClient(vvURL)
+
 	// データベース接続の確立。
 	conn, err := connectDB(ctx)
 	if err != nil {
@@ -75,12 +83,13 @@ func main() {
 	// コネクションのクローズを予約する。
 	defer conn.Close(ctx)
 
-	// リポジトリパターンの適用。
+	// [内部] データベース操作用のリポジトリを初期化する。
+	// これにより、上位レイヤーは SQL の詳細を意識せずにデータ操作が可能となる（依存性の注入）。
 	repo := db.NewRepository(conn)
 
 	// --- 3. API サーバーの起動 ---
-	// API サーバーに AI クライアントと DB リポジトリを注入する。
-	server := api.NewServer(aiClient, repo)
+	// API サーバーに AI クライアント、DB リポジトリ、VOICEVOX クライアントを注入する。
+	server := api.NewServer(aiClient, repo, vvClient)
 	addr := ":8080"
 	fmt.Printf("🚀 AI Radio Room Backend 起動完了 [ %s ]\n", addr)
 

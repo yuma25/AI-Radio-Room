@@ -1,0 +1,114 @@
+/**
+ * Package voicevox は、VOICEVOX Engine との通信を担当するパッケージである。
+ */
+package voicevox
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+)
+
+/**
+ * Client は、VOICEVOX API との物理的な通信を管理する構造体である。
+ */
+type Client struct {
+	baseURL string       // VOICEVOX Engine のベースURL (例: http://localhost:50021)
+	http    *http.Client // 再利用可能な HTTP クライアント
+}
+
+/**
+ * NewClient は、新しい VOICEVOX クライアントのインスタンスを作成して返す。
+ * @param baseURL [string] エンジンのベースURL
+ * @return [*Client] クライアントのポインタ
+ */
+func NewClient(baseURL string) *Client {
+	return &Client{
+		baseURL: baseURL,
+		http:    &http.Client{},
+	}
+}
+
+/**
+ * GenerateWav は、指定されたテキストと話者IDから音声データ(WAV)を生成する。
+ *
+ * 内部処理:
+ * - 1. `audio_query` エンドポイントを呼び出し、音声合成用のパラメータを取得する。
+ * - 2. 取得したパラメータを用いて `synthesis` エンドポイントを呼び出し、WAV データを生成する。
+ * @param ctx [context.Context] コンテキスト
+ * @param text [string] 合成するテキスト
+ * @param speakerID [int] 話者ID
+ * @return ([]byte, error) WAVデータ
+ */
+func (c *Client) GenerateWav(ctx context.Context, text string, speakerID int) ([]byte, error) {
+	// 1. AudioQuery の生成
+	query, err := c.createAudioQuery(ctx, text, speakerID)
+	if err != nil {
+		return nil, fmt.Errorf("audio_query 生成失敗: %w", err)
+	}
+
+	// 2. 音声合成 (Synthesis)
+	wav, err := c.synthesis(ctx, query, speakerID)
+	if err != nil {
+		return nil, fmt.Errorf("synthesis 実行失敗: %w", err)
+	}
+
+	return wav, nil
+}
+
+/**
+ * createAudioQuery は、テキストから音声合成パラメータ(JSON)を取得する内部メソッドである。
+ */
+func (c *Client) createAudioQuery(ctx context.Context, text string, speakerID int) ([]byte, error) {
+	params := url.Values{}
+	params.Add("text", text)
+	params.Add("speaker", fmt.Sprintf("%d", speakerID))
+
+	endpoint := fmt.Sprintf("%s/audio_query?%s", c.baseURL, params.Encode())
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status error: %d", resp.StatusCode)
+	}
+
+	return io.ReadAll(resp.Body)
+}
+
+/**
+ * synthesis は、パラメータを元に WAV データを生成する内部メソッドである。
+ */
+func (c *Client) synthesis(ctx context.Context, query []byte, speakerID int) ([]byte, error) {
+	params := url.Values{}
+	params.Add("speaker", fmt.Sprintf("%d", speakerID))
+
+	endpoint := fmt.Sprintf("%s/synthesis?%s", c.baseURL, params.Encode())
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(query))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status error: %d", resp.StatusCode)
+	}
+
+	return io.ReadAll(resp.Body)
+}

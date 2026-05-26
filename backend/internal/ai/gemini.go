@@ -28,9 +28,10 @@ import (
  * ScriptItem は、AI が生成した個別の発言データを表す構造体である。
  */
 type ScriptItem struct {
-	Speaker string `json:"speaker"` // 発言者の役割名 (mc, guest-a, guest-b)
-	Text    string `json:"text"`    // AI が生成したセリフの本文
-	Emotion string `json:"emotion"` // セリフに対応する感情トーン (normal, excited, calm)
+	Speaker   string `json:"speaker"`    // 発言者の役割名 (mc, guest-a, guest-b)
+	SpeakerID int    `json:"speaker_id"` // VOICEVOX の話者スタイルID
+	Text      string `json:"text"`       // AI が生成したセリフの本文
+	Emotion   string `json:"emotion"`    // セリフに対応する感情トーン (normal, excited, calm)
 }
 
 /**

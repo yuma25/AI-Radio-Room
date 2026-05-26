@@ -74,7 +74,12 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// --- 4. 逐次保存と配信 ---
-	for _, item := range script {
+	for i := range script {
+		item := &script[i]
+
+		// [内部] 役割と感情から VOICEVOX の話者IDを取得する。
+		item.SpeakerID = ai.GetSpeakerID(item.Speaker, item.Emotion)
+
 		// DB 保存
 		transcript := db.Transcript{
 			BroadcastID: broadcastID,

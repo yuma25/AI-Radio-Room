@@ -15,8 +15,9 @@ package api
 import (
 	"net/http" // 使用箇所: Routes, 各ハンドラー。目的: HTTP ステータスコードやレスポンス制御のため。
 
-	"backend/internal/ai" // 使用箇所: Server 構造体。目的: 台本生成ロジックの呼び出しのため。
-	"backend/internal/db" // 使用箇所: Server 構造体。目的: 放送データの永続化操作のため。
+	"backend/internal/ai"       // 使用箇所: Server 構造体。目的: 台本生成ロジックの呼び出しのため。
+	"backend/internal/db"       // 使用箇所: Server 構造体。目的: 放送データの永続化操作のため。
+	"backend/internal/voicevox" // 使用箇所: Server 構造体。目的: 音声合成ロジックの呼び出しのため。
 
 	"github.com/go-chi/chi/v5"            // 使用箇所: Routes。目的: パスベースのルーティング制御のため。
 	"github.com/go-chi/chi/v5/middleware" // 使用箇所: Routes。目的: 標準的なロギングやリカバリ機能のため。
@@ -29,21 +30,24 @@ import (
 type Server struct {
 	aiClient *ai.GeminiClient // [SDK] 台本生成用の AI クライアント
 	repo     *db.Repository   // [内部] データベース操作用のリポジトリ
+	vvClient *voicevox.Client // [内部] 音声合成用の VOICEVOX クライアント
 }
 
 /**
  * NewServer は、新しい API Server のポインタを返す。
  *
  * 内部処理:
- * - 1. 引数として受け取った AI クライアントと DB リポジトリを構造体に格納して返す。
+ * - 1. 引数として受け取った AI クライアント、DB リポジトリ、VV クライアントを構造体に格納して返す。
  * @param aiClient [*ai.GeminiClient] 初期化済みの AI クライアント
  * @param repo [*db.Repository] 初期化済みの DB リポジトリ
+ * @param vvClient [*voicevox.Client] 初期化済みの VOICEVOX クライアント
  * @return [*Server] API Server のポインタ
  */
-func NewServer(aiClient *ai.GeminiClient, repo *db.Repository) *Server {
+func NewServer(aiClient *ai.GeminiClient, repo *db.Repository, vvClient *voicevox.Client) *Server {
 	return &Server{
 		aiClient: aiClient,
 		repo:     repo,
+		vvClient: vvClient,
 	}
 }
 
@@ -79,6 +83,7 @@ func (s *Server) Routes() http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/broadcasts", s.handleStartBroadcast) // 放送開始
 		r.Get("/broadcasts", s.handleListBroadcasts)  // 履歴一覧
+		r.Get("/tts", s.handleTTS)                    // 音声合成 (Text-to-Speech)
 	})
 
 	return r
