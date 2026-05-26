@@ -23,6 +23,24 @@ document.addEventListener("DOMContentLoaded", () => {
       chat.addMessage(item);
     };
 
+    // --- BGM機能の初期化 ---
+    // ※今回はダミーのフリーBGM URLを使用する。本番では public/audio/bgm.mp3 等に置き換える。
+    const bgmAudio = new Audio(
+      "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3",
+    );
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.1; // 初期音量
+
+    const volumeSlider = document.getElementById(
+      "bgm-volume",
+    ) as HTMLInputElement;
+    if (volumeSlider) {
+      volumeSlider.addEventListener("input", (e) => {
+        const target = e.target as HTMLInputElement;
+        bgmAudio.volume = parseFloat(target.value);
+      });
+    }
+
     // 2. モーダルとテーマ設定の処理
     const themeModal = document.getElementById("theme-modal");
     const modalThemeInput = document.getElementById(
@@ -63,6 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (onAirIndicator) {
           onAirIndicator.classList.add("active");
         }
+
+        // BGM再生開始
+        bgmAudio
+          .play()
+          .catch((e) => console.warn("BGM自動再生がブロックされました:", e));
 
         // [演出] AIの台本生成（初回ラグ）を隠蔽するためのプレトーク（ダミーデータ）をキューに追加
         // バックエンドがAIから台本を受け取るまでの間（数秒〜10秒）、この自己紹介を再生して時間を稼ぐ
@@ -156,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (onAirIndicator) {
             onAirIndicator.classList.remove("active");
           }
+          // bgmAudio.pause(); // 放送終了後もBGMを流し続けるかはお好みで
           console.log("🏁 放送ストリームが終了した。");
         }
       });
