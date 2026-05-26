@@ -97,7 +97,8 @@ export class VoicePlayer {
           // 再生終了時の処理
           audio.onended = () => {
             URL.revokeObjectURL(url); // メモリ解放
-            resolve();
+            // セリフ間に自然な「間（ポーズ）」を設けるため、0.6秒待ってから次へ進む
+            setTimeout(resolve, 600);
           };
 
           audio.onerror = (e) => {

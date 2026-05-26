@@ -28,6 +28,14 @@
         </div>
       </div>
 
+      <!-- カウントダウン演出用オーバーレイ -->
+      <div id="countdown-overlay" class="countdown-overlay hidden">
+        <div class="countdown-circle">
+          <span id="countdown-number">10</span>
+        </div>
+        <p class="countdown-text">PREPARING BROADCAST...</p>
+      </div>
+
       <!-- メインエリア -->
       <main class="main-layout">
         <!-- グラスモーフィズムなヘッダー（プレイヤー風） -->
@@ -56,13 +64,6 @@
               <label for="bgm-volume" class="mixer-label">BGM VOL</label>
               <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.1" />
             </div>
-
-            <button id="start-broadcast" class="neumorphic-button primary">
-              <span class="icon">▶</span>
-            </button>
-            <button id="stop-broadcast" class="neumorphic-button danger hidden">
-              <span class="icon">■</span>
-            </button>
           </div>
         </footer>
       </main>
