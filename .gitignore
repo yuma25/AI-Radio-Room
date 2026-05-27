@@ -1,6 +1,7 @@
 # General
 .env
 *.log
+node_modules
 
 # Backend
 backend/bin/

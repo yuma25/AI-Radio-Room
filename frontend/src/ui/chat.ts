@@ -24,18 +24,27 @@ export class ChatUI {
    * タイプライター風のアニメーションで1文字ずつテキストを表示する。
    *
    * 内部処理:
-   * - 1. [内部] 引数から HTML 要素を生成し、適切な CSS クラス (mc, guest-a, guest-b) を付与する。
-   * - 2. [標準] `appendChild()` を使用して DOM に追加する。
-   * - 3. [内部] `setInterval` を用いて、テキストを1文字ずつ追加表示する。
+   * - 1. [内部] 役割名 (mc等) を正式名称にマッピングする。
+   * - 2. [内部] 引数から HTML 要素を生成し、適切な CSS クラス (mc, guest-a, guest-b) を付与する。
+   * - 3. [標準] `appendChild()` を使用して DOM に追加する。
+   * - 4. [内部] `setInterval` を用いて、テキストを1文字ずつ追加表示する。
    * @param item [ScriptItem] AI から受信したセリフデータ
    */
   public addMessage(item: ScriptItem): void {
     const messageDiv = document.createElement("div");
     messageDiv.classList.add("message", item.speaker);
 
+    // 役割名を正式名称に変換
+    const speakerNames: Record<string, string> = {
+      mc: "四国めたん",
+      "guest-a": "ずんだもん",
+      "guest-b": "春日部つむぎ",
+    };
+
     const nameSpan = document.createElement("span");
     nameSpan.classList.add("speaker-name");
-    nameSpan.textContent = item.speaker.toUpperCase();
+    nameSpan.textContent =
+      speakerNames[item.speaker] || item.speaker.toUpperCase();
 
     const textP = document.createElement("p");
     textP.classList.add("cursor"); // 点滅カーソルを追加

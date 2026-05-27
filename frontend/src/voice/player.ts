@@ -71,23 +71,29 @@ export class VoicePlayer {
    * 再生が完了するまで Promise を保留する。
    *
    * 内部処理:
-   * - 1. [標準] fetch API を使用して、/api/tts から WAV データを取得する。
-   * - 2. [標準] URL.createObjectURL を使用して、Blob を再生可能な URL に変換する。
-   * - 3. [標準] HTMLAudioElement を使用して音声を再生し、ended イベントを待機する。
+   * - 1. [拡張] item.local_audio が指定されている場合は、そのパスから直接音声を取得する。
+   * - 2. [標準] それ以外は fetch API を使用して、/api/tts から WAV データを取得する。
+   * - 3. [標準] URL.createObjectURL を使用して、Blob を再生可能な URL に変換する。
+   * - 4. [標準] HTMLAudioElement を使用して音声を再生し、ended イベントを待機する。
    * @param item [ScriptItem]
    */
   private play(item: ScriptItem): Promise<void> {
     return new Promise((resolve, reject) => {
-      const params = new URLSearchParams({
-        text: item.text,
-        speaker: item.speaker_id.toString(),
-      });
+      // ローカル音源パスがある場合はそれを利用し、なければAPIを叩く
+      const audioSource = item.local_audio
+        ? item.local_audio
+        : (() => {
+            const params = new URLSearchParams({
+              text: item.text,
+              speaker: item.speaker_id.toString(),
+            });
+            return `${this.baseUrl}/api/tts?${params}`;
+          })();
 
-      // [標準] バックエンドの TTS API を呼び出す。
-      fetch(`${this.baseUrl}/api/tts?${params}`)
+      fetch(audioSource)
         .then(async (response) => {
           if (!response.ok)
-            throw new Error(`TTS API エラー: ${response.statusText}`);
+            throw new Error(`音声取得エラー: ${response.statusText}`);
           return response.blob();
         })
         .then((blob) => {
@@ -97,8 +103,8 @@ export class VoicePlayer {
           // 再生終了時の処理
           audio.onended = () => {
             URL.revokeObjectURL(url); // メモリ解放
-            // セリフ間に自然な「間（ポーズ）」を設けるため、0.6秒待ってから次へ進む
-            setTimeout(resolve, 600);
+            // [最適化] セリフ間の「間」をさらに 0.1秒へ短縮し、極限までテンポを上げる
+            setTimeout(resolve, 100);
           };
 
           audio.onerror = (e) => {
@@ -107,7 +113,9 @@ export class VoicePlayer {
           };
 
           // 再生開始
-          console.log(`再生中...: ${item.text}`);
+          console.log(
+            `再生中...: ${item.text} (Source: ${item.local_audio ? "Local" : "API"})`,
+          );
 
           // UIと同期させるため、再生開始直前にコールバックを呼ぶ
           if (this.onPlayStart) {

@@ -81,13 +81,13 @@ document.addEventListener("DOMContentLoaded", () => {
           .play()
           .catch((e) => console.warn("BGM自動再生がブロックされました:", e));
 
-        // [演出] 10秒のカウントダウンを開始し、その裏でバックエンドに台本生成を依頼する
+        // [演出] カウントダウンを 10秒に設定。この間に裏側で全ての生成・合成を終わらせる。
         if (countdownOverlay && countdownNumber) {
           countdownOverlay.classList.remove("hidden");
           let count = 10;
           countdownNumber.textContent = count.toString();
 
-          // 非同期でバックエンドへリクエストを開始 (awaitしない)
+          // 1. [並列処理A] バックエンドへメイン台本の生成リクエストを開始
           const fetchPromise = fetch("http://localhost:8080/api/broadcasts", {
             method: "POST",
             headers: {
@@ -95,6 +95,22 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             body: JSON.stringify({ theme: currentTheme }),
           });
+
+          // 2. [並列処理B] テーマ発表セリフ（動的パーツ）の音声合成を、カウントダウンを待たずに今すぐ開始させる
+          const themeTalkItem: ScriptItem = {
+            speaker: "mc",
+            speaker_id: 6,
+            text: `本日のトークテーマは「${currentTheme}」です！今日もこの3人で、熱く語り合っていきましょう！`,
+            emotion: "excited",
+          };
+          const themeTTSParams = new URLSearchParams({
+            text: themeTalkItem.text,
+            speaker: themeTalkItem.speaker_id.toString(),
+          });
+          // 先行して Fetch を開始し、ブラウザのキャッシュに載せる
+          fetch(`http://localhost:8080/api/tts?${themeTTSParams}`).catch((e) =>
+            console.warn("Pre-fetch failed:", e),
+          );
 
           // カウントダウンタイマー
           const timer = setInterval(() => {
@@ -108,32 +124,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 onAirIndicator.classList.add("active");
               }
 
-              // カウントダウン終了後、自然な自己紹介（プレトーク）をキューに追加
+              // カウントダウン終了後、事前生成されたローカル音源を使用して即座に自己紹介を開始
               const preTalks: ScriptItem[] = [
                 {
                   speaker: "mc",
-                  speaker_id: 2, // 四国めたん（ノーマル）
+                  speaker_id: 2,
                   text: "皆さんこんにちは！AI Radio Studio の時間がやってまいりました！メインパーソナリティの、四国めたんです。",
                   emotion: "normal",
+                  local_audio: "/audio/intro_metan.wav",
                 },
                 {
                   speaker: "guest-a",
-                  speaker_id: 3, // ずんだもん（ノーマル）
+                  speaker_id: 3,
                   text: "みんなよろしくなのだ！アシスタントのずんだもんなのだ！",
                   emotion: "normal",
+                  local_audio: "/audio/intro_zunda.wav",
                 },
                 {
                   speaker: "guest-b",
-                  speaker_id: 8, // 春日部つむぎ（ノーマル）
+                  speaker_id: 8,
                   text: "同じくアシスタントの、春日部つむぎです。本日もよろしくお願いします。",
                   emotion: "normal",
+                  local_audio: "/audio/intro_tsumugi.wav",
                 },
-                {
-                  speaker: "mc",
-                  speaker_id: 6, // 四国めたん（ツンツン/興奮）
-                  text: `本日のトークテーマは「${currentTheme}」です！今日もこの3人で、熱く語り合っていきましょう！`,
-                  emotion: "excited",
-                },
+                themeTalkItem, // 先行して合成リクエストを送った動的パーツ
               ];
               preTalks.forEach((item) => voice.enqueue(item));
 

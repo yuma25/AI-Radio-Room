@@ -31,4 +31,5 @@ export interface ScriptItem {
   speaker_id: number; // VOICEVOX の話者スタイルID
   text: string; // セリフ本文
   emotion: "normal" | "excited" | "calm"; // 感情
+  local_audio?: string; // [拡張] 事前生成されたローカル音声ファイルへのパス
 }
