@@ -6,59 +6,81 @@
 
 AI Radio Room は、Google Gemini API と VOICEVOX を活用し、まるで本物のラジオ番組のような掛け合いをリアルタイムに生成・放送するスタジオアプリです。
 
-単なるテキスト生成に留まらず、キャラクターの性格、番組独自のルール、テーマを自由に変更できる「動的構成エンジン」を搭載しています。
+単なるテキスト生成に留まらず、キャラクターの性格、番組独自のルール、テーマを自由に変更できる「動的構成エンジン」を搭載。現在は、3段階の構成（導入・本題・結び）による深みのある対談と、喋っているキャラクターが動く没入感のあるスタジオUIを提供しています。
 
 ## ✨ 主要機能
 
-- **動的台本生成**: Gemini 2.5 Flash を使用し、文脈に沿った自然なラジオ台本を生成。
-- **マルチキャラクター**: 性格や語尾が異なる 3 人（メタン、ずんだもん、つむぎ）による多角的な議論。
+- **複数フェーズ台本生成**: 「導入」「本題」「結び」の3段階でAIを呼び出し、文脈を維持しながら長尺で自然な番組構成を実現。
+- **デュアルテキスト戦略**: 画面用の「綺麗な文字（漢字混じり）」と、音声用の「正確な読み（カナ）」を同時に生成し、VOICEVOX の読み間違いを徹底排除。
+- **ラジオブース UI**: 喋っているキャラクターがアニメーションし、リアルタイムテロップ（字幕）が表示されるライブモニター風の画面。
 - **SSE ストリーミング**: 生成されたセリフを一行ずつリアルタイムにブラウザへ配信。
-- **VOICEVOX 連携**: 合成音声によるフルボイス放送（実装予定）。
-- **Markdown アーカイブ**: 放送内容を自動的にドキュメント化して保存（実装予定）。
+- **高性能同期再生**: シングルフライト（負荷集約）とシーケンシャル・プリフェッチ（順序取得）により、途切れることのない滑らかな放送。
 
-## 🛠️ 技術スタックと選定理由
+## 🛠️ 技術スタック
 
 ### Backend
 - **Go (Standard Library + chi)**
-  - **概要**: Google が開発したシンプルで高速なコンパイル言語。
-  - **選定理由**: 並行処理（Goroutine）に優れており、AI 生成とストリーミング配信を低リソースかつ安定して処理できるため。また、標準ライブラリが充実しており、メンテナンス性が高いため。
+  - 並行処理（Goroutine）を活かした高速なストリーミング配信。
 - **Google Gemini API (Gemini 2.5 Flash)**
-  - **概要**: マルチモーダルな理解と高速な生成能力を持つ最新の AI モデル。
-  - **選定理由**: 圧倒的なコンテキストウィンドウと生成速度を持ち、JSON 構造化出力の精度が非常に高いため。
-- **PostgreSQL**
-  - **概要**: 高い信頼性と拡張性を持つオープンソースの RDBMS。
-  - **選定理由**: 複雑な放送ログやキャラクター設定の整合性を保ち、UUID 等の高度なデータ型をネイティブに扱えるため。
+  - 構造化出力（JSON）に特化した、高速・高精度な台本生成。
+- **PostgreSQL (pgxpool)**
+  - 放送履歴と発言ログの永続化。接続プールによる安定したアクセス。
+- **VOICEVOX Engine**
+  - 個性豊かなキャラクター音声の合成。
 
 ### Frontend
 - **TypeScript (Vanilla)**
-  - **概要**: JavaScript に静的型付けを追加した言語。
-  - **選定理由**: 本プロジェクトの UI は「リアルタイムな状態管理」が中心であり、重厚なフレームワーク（React/Vue等）を導入せずとも、軽量かつ型安全に SSE や音声再生を制御できるため。
+  - フレームワークに依存しない、軽量かつ型安全な UI 制御。
 - **Vite**
-  - **概要**: 非常に高速なビルド・開発ツール。
-  - **選定理由**: 設定が最小限で済み、TypeScript のホットリロードが極めて高速なため。
-
-## 📐 システム構成
-
-詳細な処理フローは [docs/system_flow.md](./docs/system_flow.md) および [docs/system_reference.md](./docs/system_reference.md) を参照してください。
-
-- `/frontend`: スタジオ UI、音声再生制御、SSE 受信クライアント
-- `/backend`: 台本生成エンジン、DB リポジトリ、VOICEVOX プロキシ API
-- `/docs`: シーケンス図、技術リファレンス、コマンド集
+  - 爆速な開発環境とビルド。
+- **Neumorphism & Glassmorphism**
+  - 柔らかさと透明感を活かした、モダンなオーディオプレイヤー風デザイン。
 
 ## 🚀 セットアップと実行
 
-詳細な手順は [docs/commands.md](./docs/commands.md) を参照してください。
+### 1. 準備 (Prerequisites)
+- [Docker](https://www.docker.com/) & Docker Compose
+- [Go](https://go.dev/) 1.25.0 以上
+- [Node.js](https://nodejs.org/) & [pnpm](https://pnpm.io/)
+- Google Gemini API キー ([Google AI Studio](https://aistudio.google.com/) で取得)
+- [VOICEVOX Engine](https://voicevox.hiroshiba.jp/) (ローカルまたは Docker で起動)
 
-### 1. 準備
-`.env.example` をコピーして `.env` を作成し、`GEMINI_API_KEY` を設定してください。
+### 2. 環境設定
+`.env.example` をコピーして `.env` を作成し、必要な値を設定してください。
+```bash
+cp .env.example .env
+# GEMINI_API_KEY=あなたのキー
+# DATABASE_URL=postgres://user:pass@localhost:5432/radio_room
+```
 
-### 2. アプリケーション起動
-以下のコマンドで、データベース・バックエンド・フロントエンドがすべて起動します。
+### 3. 初回セットアップ
+```bash
+pnpm setup
+```
+
+### 4. 開発用サーバーの起動
+以下のコマンドで、DB、バックエンド、フロントエンドがすべて並列で起動します。
 ```bash
 pnpm run dev
 ```
 
-## 📜 チーム開発とコーディング規約
+## ⌨️ 主要コマンド
 
-本プロジェクトは **AI（Gemini CLI & GitHub Copilot）と人間による共同開発** です。
-厳格なドキュメント規約およびコミット基準については [GEMINI.md](./GEMINI.md) を必ず確認してください。
+| コマンド | 内容 |
+| :--- | :--- |
+| `pnpm run dev` | **推奨**: 全てのコンポーネントを一括起動 |
+| `pnpm check` | **コミット前必須**: Lint/Format/Buildを一括実行 |
+| `pnpm setup` | 依存関係のインストールと整理 |
+| `pnpm db` | データベース(Docker)のみを起動 |
+| `pnpm db:stop` | データベースを停止 |
+
+## 📐 ドキュメント
+
+- [システムリファレンス](./docs/system_reference.md): メソッドレベルの詳細な処理フロー
+- [システムフロー図](./docs/system_flow.md): シーケンス図によるデータの流れの可視化
+- [用語集](./docs/glossary.md): プロジェクト特有の技術用語定義
+- [開発規約 (GEMINI.md)](./GEMINI.md): AI との共同開発における必須ルール
+
+## 📜 ライセンス
+This project is developed with the active collaboration of AI agents.
+See [GEMINI.md](./GEMINI.md) for detailed acknowledgements.
