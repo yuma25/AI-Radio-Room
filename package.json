@@ -3,13 +3,17 @@
   "private": true,
   "description": "AI Radio Room Project Root",
   "scripts": {
+    "dev": "pnpm run db && concurrently -c \"blue,green\" -n \"BACK,FRONT\" \"pnpm run dev:back\" \"pnpm run dev:front\"",
     "db": "docker compose up -d db",
     "db:stop": "docker compose stop db",
     "db:down": "docker compose down -v",
-    "dev:back": "cd backend && go run cmd/server/main.go",
+    "dev:back": "cd backend && $(go env GOPATH)/bin/air",
     "dev:front": "pnpm --filter frontend dev",
     "check": "bash ./scripts/pre-commit-check.sh",
     "setup": "pnpm install && cd backend && go mod tidy",
     "pr": "gh pr create --body-file .github/PULL_REQUEST_TEMPLATE.md"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

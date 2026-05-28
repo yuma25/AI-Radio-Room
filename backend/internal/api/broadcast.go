@@ -21,8 +21,8 @@ type broadcastRequest struct {
 }
 
 /**
- * handleStartBroadcast は、新しい放送を開始し、台本を生成して SSE で配信するハンドラーである。
- * 並列先行合成キャッシュにより、音声再生のラグを解消する。
+ * handleStartBroadcast は、新しい放送を開始し、台本を複数フェーズに分けて生成・配信するハンドラーである。
+ * フェーズごとに AI を呼び出すことで、会話の質とトータルの長さを大幅に向上させている。
  */
 func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 	var req broadcastRequest
@@ -40,38 +40,10 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. AI 台本生成
-	config := ai.GetDefaultConfig()
-	config.Theme = req.Theme
-	script, err := s.aiClient.GenerateRadioScript(ctx, config)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("台本生成に失敗した: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	// キャッシュのクリア（新しい放送のため）
 	s.vvClient.Cache.Clear()
 
-	// 3. 音声の先行並列合成 (Goルーチン)
-	// VOICEVOX エンジンへの負荷を考慮し、セマフォで同時実行数を制限する（例: 3並列）
-	semaphore := make(chan struct{}, 3)
-	var wg sync.WaitGroup
-
-	for i := range script {
-		item := &script[i]
-		item.SpeakerID = ai.GetSpeakerID(item.Speaker, item.Emotion)
-
-		wg.Add(1)
-		go func(text string, speakerID int) {
-			defer wg.Done()
-			semaphore <- struct{}{}
-			defer func() { <-semaphore }()
-
-			_, _ = s.vvClient.GenerateWav(ctx, text, speakerID)
-		}(item.Text, item.SpeakerID)
-	}
-
-	// 4. SSE 設定
+	// SSE 設定
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -82,23 +54,89 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5. 逐次保存と配信 (音声合成を待たずに即座に開始)
-	for _, item := range script {
-		transcript := db.Transcript{
-			BroadcastID: broadcastID,
-			SpeakerID:   item.Speaker,
-			Text:        item.Text,
-			Emotion:     item.Emotion,
-		}
-		if err := s.repo.SaveTranscript(ctx, &transcript); err != nil {
-			fmt.Printf("警告: 発言の保存に失敗した: %v\n", err)
-		}
+	// 音声合成の並列管理用
+	semaphore := make(chan struct{}, 5)
+	var wg sync.WaitGroup
 
-		data, _ := json.Marshal(item)
-		fmt.Fprintf(w, "data: %s\n\n", string(data))
-		flusher.Flush()
+	// --- 複数フェーズによる生成ループ ---
+	phases := []struct {
+		name        string
+		instruction string
+	}{
+		{
+			name:        "導入",
+			instruction: "【フェーズ1: 導入】指定されたテーマについて、MCがリスナーに向けて軽く紹介し、ゲストの二人に振ってください。挨拶は既に終わっている前提で、すぐに本題へのフリから開始してください。",
+		},
+		{
+			name:        "本題",
+			instruction: "【フェーズ2: 本題】テーマについてさらに深く、具体的なエピソードや独自の視点を交えて3人で賑やかに雑談してください。お互いの意見に対してリアクションを大きく取り、会話を盛り上げてください。",
+		},
+		{
+			name:        "結び",
+			instruction: "【フェーズ3: 結び】楽しい時間はあっという間です。これまでの会話を振り返りつつ、最後は全員で「お相手は、四国めたんと、」「ずんだもんなのだ！」「春日部つむぎでした。バイバーイ！」のように明るく番組を締めくくってください。これが最後のセリフです。",
+		},
 	}
 
+	config := ai.GetDefaultConfig()
+	config.Theme = req.Theme
+	var fullHistory []ai.ScriptItem
+
+	for _, phase := range phases {
+		fmt.Printf("--- Phase: %s 開始 ---\n", phase.name)
+		config.PhaseInstruction = phase.instruction
+		config.History = fullHistory // 前のフェーズまでの会話を渡す
+
+		// AI 台本生成 (現在のフェーズ分)
+		script, err := s.aiClient.GenerateRadioScript(ctx, config)
+		if err != nil {
+			fmt.Printf("警告: フェーズ %s の生成に失敗した: %v\n", phase.name, err)
+			continue
+		}
+
+		if len(script) == 0 {
+			continue
+		}
+
+		// 音声の先行並列合成 (Goルーチン)
+		for i := range script {
+			item := &script[i]
+			item.SpeakerID = ai.GetSpeakerID(item.Speaker, item.Emotion)
+
+			wg.Add(1)
+			go func(audioText string, speakerID int) {
+				defer wg.Done()
+				select {
+				case semaphore <- struct{}{}:
+					defer func() { <-semaphore }()
+					_, _ = s.vvClient.GenerateWav(ctx, audioText, speakerID)
+				case <-ctx.Done():
+					return
+				}
+			}(item.AudioText, item.SpeakerID)
+		}
+
+		// 逐次保存と配信 (音声合成を待たずに即座に開始)
+		for _, item := range script {
+			transcript := db.Transcript{
+				BroadcastID: broadcastID,
+				SpeakerID:   item.Speaker,
+				Text:        item.Text,
+				Emotion:     item.Emotion,
+			}
+			if err := s.repo.SaveTranscript(ctx, &transcript); err != nil {
+				fmt.Printf("警告: 発言の保存に失敗した: %v\n", err)
+			}
+
+			data, _ := json.Marshal(item)
+			fmt.Fprintf(w, "data: %s\n\n", string(data))
+			flusher.Flush()
+		}
+
+		// 履歴を更新（次のフェーズに引き継ぐ）
+		fullHistory = append(fullHistory, script...)
+	}
+
+	// 全ての音声合成が終わるのを待つ
 	wg.Wait()
 
 	if err := s.repo.EndBroadcast(ctx, broadcastID); err != nil {

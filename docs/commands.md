@@ -10,19 +10,20 @@ pnpm setup
 ```
 
 ### 開発用サーバーの起動
-以下のコマンドをそれぞれ別ターミナルで実行してください。
-1. **DBの起動**: `pnpm db`
-2. **バックエンド**: `pnpm dev:back`
-3. **フロントエンド**: `pnpm dev:front`
+以下のコマンドを実行するだけで、DB、バックエンド、フロントエンドが全て並列で起動します。
+```bash
+pnpm run dev
+```
 
 ## 2. コマンド一覧 (Command List)
 
 | カテゴリ | コマンド | 内容 |
 | :--- | :--- | :--- |
+| **開発** | `pnpm run dev` | **推奨**: DB、バックエンド(Air)、フロントエンドを一括起動 |
 | **データベース** | `pnpm db` | DBをバックグラウンドで起動 |
 | | `pnpm db:stop` | DBを停止 |
 | | `pnpm db:down` | DBを削除（データも消去） |
-| **開発** | `pnpm dev:back` | Go バックエンドサーバーの起動 |
+| **個別起動** | `pnpm dev:back` | Go バックエンドサーバーの起動 (Air) |
 | | `pnpm dev:front` | Vite フロントエンドサーバーの起動 |
 | **品質管理** | `pnpm check` | **コミット前必須**。Lint/Format/Buildを一括実行 |
 | **環境構築** | `pnpm setup` | 依存関係のインストールと整理 |
@@ -43,6 +44,6 @@ pnpm setup
 
 1. `main` ブランチを最新にする: `git checkout main && git pull`
 2. 作業用ブランチを作成: `git checkout -b (feat|fix)/issue-[番号]-概要`
-3. 開発開始: `pnpm db` -> `pnpm dev:back` / `pnpm dev:front`
+3. 開発開始: `pnpm run dev`
 4. 完了後のチェック: `pnpm check`
 5. コミット & プルリクエスト作成

@@ -47,12 +47,40 @@
               <div id="current-theme-display" class="theme-display hidden">本日のテーマ: <span></span></div>
             </div>
           </div>
+          <button id="back-to-home-btn" class="neumorphic-button-wide hidden" style="margin-left: auto; padding: 0.5rem 1rem; font-size: 0.8rem; height: auto; box-shadow: none; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">ホームに戻る</button>
         </header>
 
-        <!-- メッセージエリア（ニューモーフィズムなカード） -->
-        <section id="chat-area" class="chat-container">
-          <div id="message-list" class="message-list">
-            <!-- セリフが追加される -->
+        <!-- モニターエリア（ラジオブース風） -->
+        <section id="monitor-area" class="monitor-container">
+          <div class="visualizer-overlay">
+            <div class="v-bar"></div>
+            <div class="v-bar"></div>
+            <div class="v-bar"></div>
+            <div class="v-bar"></div>
+            <div class="v-bar"></div>
+          </div>
+          
+          <div class="studio-booth">
+            <div id="avatar-mc" class="avatar-box mc">
+              <div class="avatar-circle">めたん</div>
+              <span class="label">MAIN MC</span>
+            </div>
+            <div id="avatar-guest-a" class="avatar-box guest-a">
+              <div class="avatar-circle">ずんだ</div>
+              <span class="label">GUEST A</span>
+            </div>
+            <div id="avatar-guest-b" class="avatar-box guest-b">
+              <div class="avatar-circle">つむぎ</div>
+              <span class="label">GUEST B</span>
+            </div>
+          </div>
+
+          <div class="ticker-panel neumorphic-panel">
+            <div class="ticker-header">
+              <span id="active-speaker-name" class="speaker-tag">-</span>
+              <span class="live-tag">LIVE CAPTION</span>
+            </div>
+            <div id="subtitle-text" class="subtitle-text">放送待機中...</div>
           </div>
         </section>
 

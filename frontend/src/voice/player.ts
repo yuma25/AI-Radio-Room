@@ -13,11 +13,27 @@ export class VoicePlayer {
   private isPlaying: boolean = false;
   private baseUrl: string;
 
+  // 先行取得用のシーケンシャルキュー
+  private preFetchQueue: ScriptItem[] = [];
+  private isPreFetching: boolean = false;
+
   /**
    * 音声の再生が開始された時に呼び出されるコールバック。
    * UIの描画（テキストの表示）を音声と同期させるために使用する。
    */
   public onPlayStart?: (item: ScriptItem) => void;
+
+  /**
+   * キュー内の全ての音声再生が完了した時に呼び出されるコールバック。
+   */
+  public onQueueEmpty?: () => void;
+
+  /**
+   * 現在音声再生中かどうかを返す。
+   */
+  public getIsPlaying(): boolean {
+    return this.isPlaying;
+  }
 
   /**
    * コンストラクタである。
@@ -29,14 +45,74 @@ export class VoicePlayer {
 
   /**
    * enqueue は、新しいセリフを再生待ち行列に追加するメソッドである。
-   * 既に再生中でなければ、自動的に再生を開始する。
+   * 追加した瞬間に音声の先行取得（Pre-fetch）キューにも登録する。
    * @param item [ScriptItem] AI から受信したセリフデータ
    */
   public enqueue(item: ScriptItem): void {
-    console.log(`音声をキューに追加: [${item.speaker}] ${item.text}`);
+    console.log(
+      `音声をキューに追加: [${item.speaker}] ${item.text.slice(0, 15)}...`,
+    );
     this.queue.push(item);
+
+    // [最適化] 並列リクエストによるネットワークのパンクを防ぐため、1つずつダウンロードする
+    this.enqueuePreFetch(item);
+
     if (!this.isPlaying) {
       this.processQueue();
+    }
+  }
+
+  /**
+   * 先行取得キューに追加し、処理を開始する
+   */
+  private enqueuePreFetch(item: ScriptItem): void {
+    this.preFetchQueue.push(item);
+    if (!this.isPreFetching) {
+      this.processPreFetchQueue();
+    }
+  }
+
+  /**
+   * 1つずつ順番に取得する内部メソッド
+   */
+  private async processPreFetchQueue(): Promise<void> {
+    if (this.preFetchQueue.length === 0) {
+      this.isPreFetching = false;
+      return;
+    }
+
+    this.isPreFetching = true;
+    const item = this.preFetchQueue.shift();
+
+    if (item) {
+      await this.preFetch(item);
+    }
+
+    // 次のアイテムを処理
+    this.processPreFetchQueue();
+  }
+
+  /**
+   * preFetch は、音声データを事前にダウンロードして Blob URL を作成する内部メソッドである。
+   * @param item [ScriptItem]
+   */
+  private async preFetch(item: ScriptItem): Promise<void> {
+    // すでにローカル音源があるか、取得済みの場合は何もしない
+    if (item.local_audio || item.audioBlobUrl) return;
+
+    try {
+      const params = new URLSearchParams({
+        text: item.text,
+        speaker: item.speaker_id.toString(),
+      });
+      const response = await fetch(`${this.baseUrl}/api/tts?${params}`);
+      if (!response.ok) return;
+
+      const blob = await response.blob();
+      item.audioBlobUrl = URL.createObjectURL(blob);
+      console.log(`先行取得完了: ${item.text.slice(0, 10)}...`);
+    } catch (e) {
+      console.warn("先行取得失敗:", e);
     }
   }
 
@@ -46,6 +122,9 @@ export class VoicePlayer {
   private async processQueue(): Promise<void> {
     if (this.queue.length === 0) {
       this.isPlaying = false;
+      if (this.onQueueEmpty) {
+        this.onQueueEmpty();
+      }
       return;
     }
 
@@ -57,67 +136,52 @@ export class VoicePlayer {
         await this.play(item);
       } catch (error) {
         console.error("音声再生エラー:", error);
-        // エラー時もUIを進めるためコールバックを呼ぶ
         if (this.onPlayStart) this.onPlayStart(item);
       }
     }
 
-    // 次のセリフへ
     this.processQueue();
   }
 
   /**
-   * play は、実際にバックエンドから音声を取得して再生する内部メソッドである。
-   * 再生が完了するまで Promise を保留する。
-   *
-   * 内部処理:
-   * - 1. [拡張] item.local_audio が指定されている場合は、そのパスから直接音声を取得する。
-   * - 2. [標準] それ以外は fetch API を使用して、/api/tts から WAV データを取得する。
-   * - 3. [標準] URL.createObjectURL を使用して、Blob を再生可能な URL に変換する。
-   * - 4. [標準] HTMLAudioElement を使用して音声を再生し、ended イベントを待機する。
+   * play は、音声を再生する内部メソッドである。
+   * 先行取得済みのデータがあればそれを使用し、なければその場で取得する。
    * @param item [ScriptItem]
    */
   private play(item: ScriptItem): Promise<void> {
     return new Promise((resolve, reject) => {
-      // ローカル音源パスがある場合はそれを利用し、なければAPIを叩く
-      const audioSource = item.local_audio
-        ? item.local_audio
-        : (() => {
-            const params = new URLSearchParams({
-              text: item.text,
-              speaker: item.speaker_id.toString(),
-            });
-            return `${this.baseUrl}/api/tts?${params}`;
-          })();
+      // 1. ローカル音源パス
+      // 2. 先行取得済みの Blob URL
+      // 3. その場で API を叩く
+      const getAudioUrl = async (): Promise<string> => {
+        if (item.local_audio) return item.local_audio;
+        if (item.audioBlobUrl) return item.audioBlobUrl;
 
-      fetch(audioSource)
-        .then(async (response) => {
-          if (!response.ok)
-            throw new Error(`音声取得エラー: ${response.statusText}`);
-          return response.blob();
-        })
-        .then((blob) => {
-          const url = URL.createObjectURL(blob);
+        console.log(`リアルタイム取得: ${item.text.slice(0, 10)}...`);
+        const params = new URLSearchParams({
+          text: item.text,
+          speaker: item.speaker_id.toString(),
+        });
+        const response = await fetch(`${this.baseUrl}/api/tts?${params}`);
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      };
+
+      getAudioUrl()
+        .then((url) => {
           const audio = new Audio(url);
 
-          // 再生終了時の処理
           audio.onended = () => {
-            URL.revokeObjectURL(url); // メモリ解放
-            // [最適化] セリフ間の「間」をさらに 0.1秒へ短縮し、極限までテンポを上げる
+            // 先行取得した URL の場合は、ここでメモリ解放
+            if (url.startsWith("blob:")) {
+              URL.revokeObjectURL(url);
+            }
+            // [極限最適化] セリフ間の「間」を 0.1秒にし、沈黙を排除
             setTimeout(resolve, 100);
           };
 
-          audio.onerror = (e) => {
-            URL.revokeObjectURL(url);
-            reject(e);
-          };
+          audio.onerror = (e) => reject(e);
 
-          // 再生開始
-          console.log(
-            `再生中...: ${item.text} (Source: ${item.local_audio ? "Local" : "API"})`,
-          );
-
-          // UIと同期させるため、再生開始直前にコールバックを呼ぶ
           if (this.onPlayStart) {
             this.onPlayStart(item);
           }

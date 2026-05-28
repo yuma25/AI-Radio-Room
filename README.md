@@ -52,18 +52,10 @@ AI Radio Room は、Google Gemini API と VOICEVOX を活用し、まるで本�
 ### 1. 準備
 `.env.example` をコピーして `.env` を作成し、`GEMINI_API_KEY` を設定してください。
 
-### 2. インフラ起動 (Docker)
+### 2. アプリケーション起動
+以下のコマンドで、データベース・バックエンド・フロントエンドがすべて起動します。
 ```bash
-pnpm db
-```
-
-### 3. アプリケーション起動
-```bash
-# バックエンド
-pnpm dev:back
-
-# フロントエンド
-pnpm dev:front
+pnpm run dev
 ```
 
 ## 📜 チーム開発とコーディング規約

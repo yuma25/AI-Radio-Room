@@ -1,97 +1,84 @@
-# AI Radio Room システム・リファレンス
+# マスター・システム・リファレンス (Master System Reference)
 
-本ドキュメントは、AI Radio Room バックエンドシステムの全容を言語化したものである。システムフロー図 (`docs/system_flow.md`) と対応しており、データ定義および具体的な処理の連鎖を詳細に解説する。
-
----
-
-## 1. バックエンドの処理フロー（全体像）
-
-システムにおける主要な動作フローは、大きく「初期化」「AI生成」「音声合成」「DB保存」のフェーズに分かれる。
-
-### 1.1 初期化・準備フェーズ
-外部環境のロードと各エンジン（AI, DB, VOICEVOX）のクライアントを準備する。
-
-1. **環境変数のロード**:
-    - `godotenv.Load()` を使用し、APIキー、DB接続URL、VOICEVOX接続URLをロードする。
-2. **AI クライアントの初期化**:
-    - `ai.NewGeminiClient(ctx)` を呼び出し、Gemini API との通信インターフェースを確立する。
-3. **VOICEVOX クライアントの初期化**:
-    - `voicevox.NewClient(baseURL)` を呼び出し、Docker コンテナ上の音声合成エンジンとの通信インターフェースを確立する。
-4. **DB 接続とリポジトリ初期化**:
-    - `pgx.Connect()` で接続後、`db.NewRepository(conn)` でデータ永続化層を準備する。
-
-### 1.2 台本生成とストリーミングフェーズ
-1. **放送開始リクエスト**:
-    - `POST /api/broadcasts` を受け取り、`repo.CreateBroadcast` でセッションを開始する。
-2. **AI 台本生成**:
-    - `aiClient.GenerateRadioScript` を呼び出し、Gemini から 1 放送分のセリフリスト (`[]ScriptItem`) を一括取得する。
-3. **SSE ストリーミング配信**:
-    - 各 `ScriptItem` をループで処理し、以下の情報を `data: ` フィールドに含めて SSE で送信する。
-    - **`speaker_id`**: `ai.GetSpeakerID(role, emotion)` を呼び出し、役割と感情に基づいた VOICEVOX スタイルIDを付与する。
-4. **DB 保存**:
-    - 配信と並行して `repo.SaveTranscript` を実行し、発言ログを永続化する。
-
-### 1.3 音声合成フェーズ (TTS) と並列先行キャッシュ
-フロントエンドからのリクエストに応じて、リアルタイムに音声を生成する。音声再生のラグを無くすため、バックエンド内で強力な並列キャッシュ機構を備えている。
-
-1. **並列先行合成**:
-    - `handleStartBroadcast` にて AI 台本が完成した直後、全セリフに対する音声合成を Goルーチンを用いて一斉に開始する。
-    - エンジンへの負荷を考慮し、セマフォ（チャネル）によって同時実行数を制限している。
-2. **キャッシュ機構**:
-    - 生成された WAV データは、`voicevox.VoiceCache` (メモリ上のスレッドセーフなマップ) に `話者ID:テキスト` をキーとして一時保存される。
-3. **音声合成リクエスト (TTS)**:
-    - `GET /api/tts?text=...&speaker=...` を受け取る。
-4. **VOICEVOX 連携 (またはキャッシュヒット)**:
-    - `vvClient.GenerateWav` を呼び出す。
-    - **キャッシュヒット時**: 既に先行合成が完了している場合は、API 通信を行わずにメモリから即座に WAV データを返す。
-    - **キャッシュミス時**: 内部で `audio_query` と `synthesis` の 2 段階の API リクエストを VOICEVOX エンジンに送信し、WAV を生成・キャッシュして返す。
-5. **音声データの返却**:
-    - 生成または取得された WAV バイナリを `Content-Type: audio/wav` としてレスポンスする。
+本ドキュメントは、AI Radio Room の全システムにおける、サーバー起動からユーザーの画面にテキストが出力されるまでの処理フローを、一切省略することなく技術的詳細（引数、戻り値、構造体の生成過程、インターフェースの実装条件、および類似・反対の処理パターン）を含めて完全に言語化したものである。
 
 ---
 
-## 2. API サーバーと通信プロトコル (`backend/internal/api`)
+## 1. サーバー起動・初期化フェーズ
 
-### 2.1 エンドポイント定義
-- **`POST /api/broadcasts`**: 放送開始と台本の SSE ストリーミング配信。
-- **`GET /api/tts`**: テキストから音声バイナリ(WAV)への変換。
-- **`GET /api/broadcasts`**: 過去の放送履歴一覧の取得（実装予定）。
+このフェーズの目的は、アプリケーションの「構成要素（構造体）」を生成し、それらを組み立てて 1 つの「実行環境（サーバー）」を作り上げることである。
 
-### 2.2 技術的特記事項 (SSE)
-- **バッファ制御**: 各セリフ送信後に `(http.Flusher).Flush()` を呼び出し、即時性を確保する。
-- **非同期配信**: デモ用の強制的な遅延（`time.Sleep`）を排除し、SSE のテキスト配信は DB 保存と同時に最高速で完了させる。
-- **終了通知**: 全セリフ送信完了後、`event: close` を送信してストリームを閉じる。先行合成の Goルーチンがバックグラウンドで処理を継続している場合でも、フロントエンドへの配信はブロックしない。
+### 1.1 環境変数のロード (`loadEnv()`)
+- **ファイル**: `backend/cmd/server/main.go`
+- **内部処理**: `godotenv.Load()` を使用し、`.env` または `../.env` から環境変数を展開する。
+
+### 1.2 基底コンテキストの生成
+- **内部処理**: `ctx := context.Background()`
+- **戻り値**: `context.Context`。アプリケーション全体のライフサイクルを管理する。
+
+### 1.3 AI クライアント構造体の生成 (`ai.NewGeminiClient`)
+- **ファイル**: `backend/internal/ai/gemini.go`
+- **内部処理**: `os.Getenv("GEMINI_API_KEY")` で取得したキーを用いて `genai.NewClient` を呼び出し、自作の `ai.GeminiClient` 構造体にカプセル化する。
+
+### 1.4 VOICEVOX クライアント構造体の生成 (`voicevox.NewClient`)
+- **ファイル**: `backend/internal/voicevox/client.go`
+- **内部処理**: ベースURLと `http.Client`、およびメモリキャッシュ `*VoiceCache` を持つ `*voicevox.Client` を生成する。
+- **最適化**: 同一リクエストの重複を避けるため `singleflight.Group` を内包している。
+
+### 1.5 データベース接続とリポジトリ構造体の生成
+- **ファイル**: `backend/internal/db/repository.go`
+- **内部処理**: `pgxpool.New` で接続プールを作成し、それを `db.NewRepository` に渡して `*db.Repository` 構造体を生成する。
 
 ---
 
-## 3. 共通技術規約（エンジニアリング・スタンダード）
+## 2. 放送開始リクエストの処理フロー
 
-### 3.1 Context の取り扱い
-- Go の `context.Context` をすべての I/O 処理の第一引数とする。
-- クライアントの切断を検知し、重い AI 処理や音声生成処理を即座にキャンセルするために `r.Context()` を末端まで伝播させる。
+フロントエンドから `/api/broadcasts` へ POST リクエストが飛んできた際の、複数フェーズにわたる生成・配信の流れ。
 
-### 3.2 エラーハンドリング
-- **Fail-Fast**: 起動時の接続失敗は `log.Fatalf` でプロセスを即座に停止させる。
-- **継続性**: 放送中の部分的な保存失敗等はログ出力に留め、ユーザーへの配信を優先する。
+### 2.1 複数フェーズ台本生成のループ (`handleStartBroadcast`)
+- **ファイル**: `backend/internal/api/broadcast.go`
+- **フェーズ構成**: 「導入」「本題」「結び」の 3 段階で AI を呼び出す。
+- **文脈維持**: 前のフェーズで生成された `[]ai.ScriptItem` を `config.History` として次のリクエストに渡すことで、会話の継続性を保つ。
+
+### 2.2 デュアルテキスト構造 (`ScriptItem`)
+- **ファイル**: `backend/internal/ai/gemini.go`
+- **text**: 画面表示用のクリーンなテキスト（漢字混じり）。
+- **audio_text**: 音声合成用のテキスト（読み間違いを防ぐため、英単語・数字・難読漢字をカナ化したもの）。
+
+### 2.3 音声の並列先行合成と集約
+- **内部処理**: `singleflight.Group` を使用。
+  1. `c.sfGroup.Do(key, ...)` を実行し、同一の `audio_text` + 話者IDに対するリクエストを 1 つにまとめる。
+  2. 初回リクエストのみが `audio_query` と `synthesis` を実行し、結果をキャッシュ。
+  3. 他の同時リクエストは完了を待って結果を共有する。
+
+### 2.4 SSE (Server-Sent Events) による逐次配信
+- **内部処理**:
+  1. 1つのセリフが生成・保存されるたびに `json.Marshal` して送信。
+  2. `flusher.Flush()` により即座にフロントエンドへ押し出す。これにより、全台本が完成する前に放送を開始できる。
 
 ---
 
-## 4. データ定義詳細
+## 3. フロントエンド：ラジオブースUIと同期再生
 
-### 4.1 AI 連携モデル (`backend/internal/ai`)
+### 3.1 逐次プリフェッチ (`VoicePlayer.enqueue`)
+- **ファイル**: `frontend/src/voice/player.ts`
+- **内部処理**: 届いたセリフを `preFetchQueue` に入れ、1つずつ順番に `/api/tts` からダウンロードする。ネットワークの混雑とブラウザの同時接続数制限を回避する。
 
-#### `ScriptItem` 構造体
-- **`Speaker`** [string]: 役割名 (mc, guest-a, guest-b)。
-- **`SpeakerID`** [int]: VOICEVOX のスタイルID（2: めたん, 3: ずんだもん等）。
-- **`Text`** [string]: 発言本文。
-- **`Emotion`** [string]: 感情トーン (normal, excited, calm)。
+### 3.2 ライブモニターの更新 (`MonitorUI.update`)
+- **ファイル**: `frontend/src/ui/monitor.ts`
+- **アバター演出**: 喋っているキャラクターの `.avatar-box` に `speaking` クラスを付与し、浮き上がりと彩度向上をアニメーションさせる。
+- **テロップ表示**: 画面下部の `ticker-panel` に、画面表示用の `text` をタイプライター風に描画する。
 
-#### 話者マッピング (`ai.GetSpeakerID`)
-- `mc` + `normal` -> 2 (めたん)
-- `guest-a` + `normal` -> 3 (ずんだもん)
-- `guest-b` -> 8 (春日部つむぎ)
-- 感情に応じて「ツンツン（excited）」や「ささやき（calm）」のスタイルIDを動的に選択する。
+### 3.3 音声と表示の同期
+- **内部処理**: `Audio.play()` が開始された瞬間に `onPlayStart` コールバックが発火し、`MonitorUI` の更新をトリガーする。これにより、聴覚と視覚のフィードバックが完全に一致する。
 
-### 4.2 データベースモデル (`backend/internal/db`)
-- `broadcasts`: ID, タイトル, 開始・終了日時。
-- `transcripts`: ID, 放送ID, 話者名, 内容, 感情, 作成日時。
+---
+
+## 4. データと処理の連鎖まとめ
+
+| 要素 | 役割 | 変換内容 |
+| :--- | :--- | :--- |
+| **Gemini API** | 台本生成 | テーマ -> `text` + `audio_text` |
+| **Singleflight** | 負荷軽減 | 重複リクエスト -> 単一合成処理 |
+| **SSE / Flush** | 低遅延配信 | 生成済みデータ -> 即時ネットワーク送信 |
+| **MonitorUI** | 没入感向上 | 構造体データ -> アバターアニメ + テロップ |

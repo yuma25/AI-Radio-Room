@@ -15,15 +15,15 @@ import (
 	"context" // 使用箇所: Repository の全メソッド。目的: DB 操作のタイムアウトおよびキャンセル管理のため。
 	"fmt"     // 使用箇所: 各メソッドのエラーハンドリング。目的: エラーメッセージの装飾とラップのため。
 
-	"github.com/google/uuid"  // 使用箇所: CreateBroadcast, GetTranscriptsByBroadcastID。目的: UUID 型の引数および戻り値を扱うため。
-	"github.com/jackc/pgx/v5" // 使用箇所: Repository 構造体、NewRepository 関数。目的: PostgreSQL への低レベルな接続およびクエリ実行のため。
+	"github.com/google/uuid"          // 使用箇所: CreateBroadcast, GetTranscriptsByBroadcastID。目的: UUID 型の引数および戻り値を扱うため。
+	"github.com/jackc/pgx/v5/pgxpool" // 使用箇所: Repository 構造体、NewRepository 関数。目的: PostgreSQL への低レベルな接続およびクエリ実行のため。
 )
 
 /**
  * Repository は、データベース操作の実装を保持する構造体である。
  */
 type Repository struct {
-	conn *pgx.Conn // [SDK] PostgreSQL へのアクティブな接続オブジェクト
+	conn *pgxpool.Pool // [SDK] PostgreSQL へのアクティブな接続オブジェクト
 }
 
 /**
@@ -34,7 +34,7 @@ type Repository struct {
  * @param conn [*pgx.Conn] 確立済みのデータベース接続
  * @return repo [*Repository] 作成されたリポジトリのポインタ
  */
-func NewRepository(conn *pgx.Conn) *Repository {
+func NewRepository(conn *pgxpool.Pool) *Repository {
 	return &Repository{conn: conn}
 }
 

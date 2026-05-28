@@ -26,8 +26,8 @@ import (
 	"backend/internal/db"       // 使用箇所: main。目的: リポジトリの生成のため。
 	"backend/internal/voicevox" // 使用箇所: main。目的: VOICEVOX クライアントの初期化のため。
 
-	"github.com/jackc/pgx/v5"  // 使用箇所: connectDB。目的: PostgreSQL への接続のため。
-	"github.com/joho/godotenv" // 使用箇所: loadEnv。目的: .env のロードのため。
+	"github.com/jackc/pgx/v5/pgxpool" // 使用箇所: connectDB。目的: PostgreSQL への接続のため。
+	"github.com/joho/godotenv"        // 使用箇所: loadEnv。目的: .env のロードのため。
 )
 
 /**
@@ -52,7 +52,7 @@ import (
  * @return なし
  */
 func main() {
-	// --- 1. 設定のロード ---
+	// --- 1. OSの環境変数にロード ---
 	loadEnv()
 
 	// サーバー全体のライフサイクルを管理するための基底コンテキストを生成する。
@@ -74,14 +74,15 @@ func main() {
 		vvURL = "http://localhost:50021" // デフォルト値
 	}
 	vvClient := voicevox.NewClient(vvURL)
-
+	//fmt.Printf("%#v\n", ctx)
+	//fmt.Printf("%#v\n", ctx)
 	// データベース接続の確立。
 	conn, err := connectDB(ctx)
 	if err != nil {
 		log.Fatalf("❌ データベース接続失敗: %v", err)
 	}
 	// コネクションのクローズを予約する。
-	defer conn.Close(ctx)
+	defer conn.Close()
 
 	// [内部] データベース操作用のリポジトリを初期化する。
 	// これにより、上位レイヤーは SQL の詳細を意識せずにデータ操作が可能となる（依存性の注入）。
@@ -133,10 +134,12 @@ func loadEnv() {
  * @return [*pgx.Conn] 接続オブジェクト
  * @return [error]
  */
-func connectDB(ctx context.Context) (*pgx.Conn, error) {
+func connectDB(ctx context.Context) (*pgxpool.Pool, error) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL が未設定である")
 	}
-	return pgx.Connect(ctx, dbURL)
+
+	// pgx.Connect ではなく pgxpool.New を使う
+	return pgxpool.New(ctx, dbURL)
 }

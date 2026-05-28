@@ -1,5 +1,5 @@
 /**
- * Package voicevox は、VOICEVOX Engine との通信を担当するパッケージである。
+ * Package voicevox は、VOICEVOX Engine ととの通信を担当するパッケージである。
  */
 package voicevox
 
@@ -10,15 +10,18 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"golang.org/x/sync/singleflight"
 )
 
 /**
  * Client は、VOICEVOX API との物理的な通信を管理する構造体である。
  */
 type Client struct {
-	baseURL string       // VOICEVOX Engine のベースURL (例: http://localhost:50021)
-	http    *http.Client // 再利用可能な HTTP クライアント
-	Cache   *VoiceCache  // 音声データのキャッシュ
+	baseURL string             // VOICEVOX Engine のベースURL (例: http://localhost:50021)
+	http    *http.Client       // 再利用可能な HTTP クライアント
+	Cache   *VoiceCache        // 音声データのキャッシュ
+	sfGroup singleflight.Group // 同一テキストの同時リクエストを 1 つにまとめるためのグループ
 }
 
 /**
@@ -40,9 +43,10 @@ func NewClient(baseURL string) *Client {
  *
  * 内部処理:
  * - 1. キャッシュを確認し、存在すれば即座に返す。
- * - 2. `audio_query` エンドポイントを呼び出し、音声合成用のパラメータを取得する。
- * - 3. 取得したパラメータを用いて `synthesis` エンドポイントを呼び出し、WAV データを生成する。
- * - 4. 生成されたデータをキャッシュに保存する。
+ * - 2. singleflight を使用し、全く同じテキスト+話者のリクエストが同時に複数来た場合、1 つの処理に集約する。
+ * - 3. `audio_query` エンドポイントを呼び出し、音声合成用のパラメータを取得する。
+ * - 4. 取得したパラメータを用いて `synthesis` エンドポイントを呼び出し、WAV データを生成する。
+ * - 5. 生成されたデータをキャッシュに保存する。
  * @param ctx [context.Context] コンテキスト
  * @param text [string] 合成するテキスト
  * @param speakerID [int] 話者ID
@@ -50,26 +54,43 @@ func NewClient(baseURL string) *Client {
  */
 func (c *Client) GenerateWav(ctx context.Context, text string, speakerID int) ([]byte, error) {
 	key := GenerateKey(text, speakerID)
+
+	// --- 1. キャッシュチェック ---
 	if data, ok := c.Cache.Get(key); ok {
 		return data, nil
 	}
 
-	// 1. AudioQuery の生成
-	query, err := c.createAudioQuery(ctx, text, speakerID)
+	// --- 2. 同時リクエストの集約 (singleflight) ---
+	// 重複したリクエスト（バックグラウンド生成とフロントエンドからの取得など）を 1 つにまとめる。
+	v, err, _ := c.sfGroup.Do(key, func() (interface{}, error) {
+		// Do 内部で再度キャッシュを確認する（先行したリクエストが完了している可能性があるため）
+		if data, ok := c.Cache.Get(key); ok {
+			return data, nil
+		}
+
+		// AudioQuery の生成
+		query, err := c.createAudioQuery(ctx, text, speakerID)
+		if err != nil {
+			return nil, fmt.Errorf("audio_query 生成失敗: %w", err)
+		}
+
+		// 音声合成 (Synthesis)
+		wav, err := c.synthesis(ctx, query, speakerID)
+		if err != nil {
+			return nil, fmt.Errorf("synthesis 実行失敗: %w", err)
+		}
+
+		// キャッシュに保存
+		c.Cache.Set(key, wav)
+
+		return wav, nil
+	})
+
 	if err != nil {
-		return nil, fmt.Errorf("audio_query 生成失敗: %w", err)
+		return nil, err
 	}
 
-	// 2. 音声合成 (Synthesis)
-	wav, err := c.synthesis(ctx, query, speakerID)
-	if err != nil {
-		return nil, fmt.Errorf("synthesis 実行失敗: %w", err)
-	}
-
-	// キャッシュに保存
-	c.Cache.Set(key, wav)
-
-	return wav, nil
+	return v.([]byte), nil
 }
 
 /**
