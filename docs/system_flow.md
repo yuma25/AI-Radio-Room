@@ -12,18 +12,18 @@
 sequenceDiagram
     autonumber
     
-    box rgb(248, 250, 252) External / Config
+    box #f8fafa "External / Config"
         participant Env as OS Environment / .env
     end
     
-    box rgb(238, 242, 255) Backend Process
+    box #eef2ff "Backend Process"
         participant Main as cmd/server/main.go
         participant AI as internal/ai (Gemini)
         participant VV as internal/voicevox (Client)
         participant DB as internal/db (Repository)
     end
     
-    box rgb(240, 253, 244) Infrastructure
+    box #f0fdf4 "Infrastructure"
         participant PG as PostgreSQL (pgxpool)
     end
 
@@ -55,11 +55,11 @@ sequenceDiagram
 sequenceDiagram
     autonumber
 
-    box rgb(250, 250, 250) Client (Frontend)
+    box #fafafa "Client (Frontend)"
         participant UI as Studio UI (Monitor)
     end
 
-    box rgb(255, 247, 237) Backend (Go)
+    box #fff7ed "Backend (Go)"
         participant Handler as api/broadcast.go
         participant AI as internal/ai
         participant VV as internal/voicevox
@@ -98,18 +98,18 @@ sequenceDiagram
 sequenceDiagram
     autonumber
 
-    box rgb(250, 250, 250) Frontend Logic
+    box #fafafa "Frontend Logic"
         participant Player as VoicePlayer.ts
         participant Monitor as MonitorUI.ts
     end
 
-    box rgb(245, 243, 255) Backend
+    box #f5f3ff "Backend"
         participant TTS as /api/tts
     end
 
     Note over Player: SSE 受信 & キュー登録
     
-    rect rgb(237, 233, 254)
+    rect #ede9fe
     Note over Player: シーケンシャル・プリフェッチ
     Player->>TTS: GET /api/tts (audio_text)
     TTS-->>Player: WAV (Blob)
@@ -137,11 +137,11 @@ sequenceDiagram
 sequenceDiagram
     autonumber
 
-    box rgb(255, 255, 255) Backend
+    box #ffffff "Backend"
         participant Repo as internal/db (Repository)
     end
 
-    box rgb(240, 253, 250) Storage
+    box #f0fdfa "Storage"
         participant DB as PostgreSQL
     end
 
