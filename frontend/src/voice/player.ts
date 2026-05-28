@@ -102,7 +102,7 @@ export class VoicePlayer {
 
     try {
       const params = new URLSearchParams({
-        text: item.text,
+        text: item.audio_text,
         speaker: item.speaker_id.toString(),
       });
       const response = await fetch(`${this.baseUrl}/api/tts?${params}`);

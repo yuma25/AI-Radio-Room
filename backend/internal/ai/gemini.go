@@ -8,6 +8,7 @@ import (
 	"encoding/json" // 使用箇所: GenerateRadioScript メソッド。目的: AI からの JSON レスポンスを構造体にデコードするため。
 	"fmt"           // 使用箇所: 各メソッド。目的: 文字列のフォーマットやエラーメッセージの構築のため。
 	"os"            // 使用箇所: NewGeminiClient。目的: 環境変数から GEMINI_API_KEY を読み込むため。
+	"strings"       // 使用箇所: GenerateRadioScript。目的: Markdown コードブロックを除去するため。
 
 	"google.golang.org/genai"
 )
@@ -89,9 +90,21 @@ func (g *GeminiClient) GenerateRadioScript(ctx context.Context, config Generator
 		return nil, fmt.Errorf("AI からの応答が空である")
 	}
 
+	// [内部] Markdown のコードブロック (```json ... ```) が含まれている場合に備え、トリミングする。
+	responseText = strings.TrimSpace(responseText)
+	if strings.HasPrefix(responseText, "```json") {
+		responseText = strings.TrimPrefix(responseText, "```json")
+		responseText = strings.TrimSuffix(responseText, "```")
+	} else if strings.HasPrefix(responseText, "```") {
+		responseText = strings.TrimPrefix(responseText, "```")
+		responseText = strings.TrimSuffix(responseText, "```")
+	}
+	responseText = strings.TrimSpace(responseText)
+
 	// JSON 配列としてパース
 	var script []ScriptItem
 	if err := json.Unmarshal([]byte(responseText), &script); err != nil {
+
 		return nil, fmt.Errorf("JSON パース失敗: %w\nRaw: %s", err, responseText)
 	}
 

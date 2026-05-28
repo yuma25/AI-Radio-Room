@@ -56,6 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const countdownNumber = document.getElementById("countdown-number");
 
     const backToHomeBtn = document.getElementById("back-to-home-btn");
+    const modalBgmToggle = document.getElementById(
+      "modal-bgm-toggle",
+    ) as HTMLInputElement;
 
     let currentTheme = "AIとの共生"; // デフォルトテーマ
     let isStreamActive = false; // ストリームが動作中かどうかのフラグ
@@ -85,6 +88,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (modalStartBtn) modalStartBtn.removeAttribute("disabled");
       if (currentThemeDisplay) currentThemeDisplay.classList.add("hidden");
       if (backToHomeBtn) backToHomeBtn.classList.add("hidden");
+
+      // BGMを停止
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
     };
 
     if (backToHomeBtn) {
@@ -118,10 +125,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log(`🎙️ 放送準備完了: テーマ「${currentTheme}」`);
 
-        // BGM再生開始
-        bgmAudio
-          .play()
-          .catch((e) => console.warn("BGM自動再生がブロックされました:", e));
+        // BGM再生開始（チェックボックスがONの場合のみ）
+        if (modalBgmToggle && modalBgmToggle.checked) {
+          bgmAudio
+            .play()
+            .catch((e) => console.warn("BGM自動再生がブロックされました:", e));
+        }
 
         // [演出] カウントダウンを 10秒に設定。この間に裏側で全ての生成・合成を終わらせる。
         if (countdownOverlay && countdownNumber) {

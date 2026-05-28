@@ -71,15 +71,9 @@ sequenceDiagram
         Handler->>AI: GenerateRadioScript(History)
         AI-->>Handler: []ScriptItem (text + audio_text)
         
-        par 並列音声合成 (Goルーチン)
-            Handler->>VV: GenerateWav(audio_text)
-            Note over VV: Singleflight で集約
-            VV-->>Handler: 合成完了
-        and 逐次データ配信 (SSE)
-            loop 各セリフ
-                Handler->>UI: SSE data: {JSON}
-                Note right of UI: 受信後、音声プリフェッチ
-            end
+        loop 各セリフ
+            Handler->>UI: SSE data: {JSON}
+            Note right of UI: 受信後、フロントエンドが音声プリフェッチを開始
         end
         
         Handler->>Handler: History を更新して次のフェーズへ

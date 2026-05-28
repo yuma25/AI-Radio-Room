@@ -24,6 +24,13 @@
           <h2>番組設定</h2>
           <p>本日のトークテーマを入力してください</p>
           <input type="text" id="modal-theme-input" class="neumorphic-input" placeholder="例：未来の技術について" />
+          
+          <!-- BGM設定 -->
+          <div class="setting-item" style="display: flex; align-items: center; gap: 10px; padding: 0 10px;">
+            <input type="checkbox" id="modal-bgm-toggle" checked style="width: 20px; height: 20px; cursor: pointer;" />
+            <label for="modal-bgm-toggle" style="font-size: 0.9rem; cursor: pointer; color: var(--text-main); font-weight: bold;">BGMを再生する</label>
+          </div>
+
           <button id="modal-start-btn" class="neumorphic-button-wide primary">放送準備完了</button>
         </div>
       </div>

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 
 	"backend/internal/ai"
 	"backend/internal/db"
@@ -54,10 +53,6 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 音声合成の並列管理用
-	semaphore := make(chan struct{}, 5)
-	var wg sync.WaitGroup
-
 	// --- 複数フェーズによる生成ループ ---
 	phases := []struct {
 		name        string
@@ -73,7 +68,7 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 		},
 		{
 			name:        "結び",
-			instruction: "【フェーズ3: 結び】楽しい時間はあっという間です。これまでの会話を振り返りつつ、最後は全員で「お相手は、四国めたんと、」「ずんだもんなのだ！」「春日部つむぎでした。バイバーイ！」のように明るく番組を締めくくってください。これが最後のセリフです。",
+			instruction: "【フェーズ3: 結び】楽しい時間はあっという間です。これまでの会話を振り返りつつ、最後は全員で「お相手は、四国めたんと、」「ずんだもんなのだ！」「春日部つむぎでした。バイバーイ！」のように明るく番組を締めくってください。これが最後のセリフです。",
 		},
 	}
 
@@ -97,25 +92,13 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// 音声の先行並列合成 (Goルーチン)
+		// 音声合成用のメタデータ設定
 		for i := range script {
 			item := &script[i]
 			item.SpeakerID = ai.GetSpeakerID(item.Speaker, item.Emotion)
-
-			wg.Add(1)
-			go func(audioText string, speakerID int) {
-				defer wg.Done()
-				select {
-				case semaphore <- struct{}{}:
-					defer func() { <-semaphore }()
-					_, _ = s.vvClient.GenerateWav(ctx, audioText, speakerID)
-				case <-ctx.Done():
-					return
-				}
-			}(item.AudioText, item.SpeakerID)
 		}
 
-		// 逐次保存と配信 (音声合成を待たずに即座に開始)
+		// 逐次保存と配信 (音声合成はフロントエンドの逐次プリフェッチに任せる)
 		for _, item := range script {
 			transcript := db.Transcript{
 				BroadcastID: broadcastID,
@@ -135,9 +118,6 @@ func (s *Server) handleStartBroadcast(w http.ResponseWriter, r *http.Request) {
 		// 履歴を更新（次のフェーズに引き継ぐ）
 		fullHistory = append(fullHistory, script...)
 	}
-
-	// 全ての音声合成が終わるのを待つ
-	wg.Wait()
 
 	if err := s.repo.EndBroadcast(ctx, broadcastID); err != nil {
 		fmt.Printf("警告: 放送終了処理に失敗した: %v\n", err)
